@@ -3,13 +3,15 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 
 class Client:
-    def __init__(self):
+    def __init__(self, username=None, password=None):
         self.session = requests.Session()
         self.sessionAt = {}
         self.response_list = {}
         self.epg_data = {}
         self.device = None
         self.all_channels = {}
+        self.username = username
+        self.password = password
 
         self.load_device()
         self.x_forward = {"local": {"X-Forwarded-For":""},
@@ -62,6 +64,10 @@ class Client:
             'lastAppLaunchDate': '',
             # 'clientTime': '2024-04-18T19:05:52.323Z',
             }
+
+        if self.username and self.password:
+            boot_params['username'] = self.username
+            boot_params['password'] = self.password
 
         if country_code in self.x_forward.keys():
             boot_headers.update(self.x_forward.get(country_code))
@@ -131,7 +137,7 @@ class Client:
             response = self.session.get(category_url, params=params, headers=headers)
         except Exception as e:
             return None, (f"Error Exception type: {type(e).__name__}")
-        
+
         if response.status_code != 200:
             return None, f"HTTP failure {response.status_code}: {response.text}"
 
@@ -276,7 +282,7 @@ class Client:
                     response = self.session.get(url, params=epg_params, headers=epg_headers)
                 except Exception as e:
                     return None, (f"Error Exception type: {type(e).__name__}")
-                
+
                 if response.status_code != 200:
                     return None, f"HTTP failure {response.status_code}: {response.text}"
                 country_data.append(response.json())
@@ -480,7 +486,7 @@ class Client:
                 epg_data_dict = {'data': data_list}
                 all_epg_data.append(epg_data_dict)
 
-            
+
         # print(f"[INFO] Length {len(all_epg_data)}")
         return(all_epg_data)
 

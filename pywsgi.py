@@ -20,6 +20,9 @@ try:
 except:
     port = 7777
 
+pluto_username = os.environ.get("PLUTO_USERNAME")
+pluto_password = os.environ.get("PLUTO_PASSWORD")
+
 pluto_country_list = os.environ.get("PLUTO_CODE")
 if pluto_country_list:
    pluto_country_list = pluto_country_list.split(',')
@@ -31,7 +34,7 @@ ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'all']
 app = Flask(__name__)
 provider = "pluto"
 providers = {
-    provider: importlib.import_module(provider).Client(),
+    provider: importlib.import_module(provider).Client(pluto_username, pluto_password),
 }
 
 def remove_non_printable(s):
@@ -139,7 +142,7 @@ def playlist(provider, country_code):
 
     host = request.host
     channel_id_format = request.args.get('channel_id_format','').lower()
-    
+
     if err is not None:
         return err, 500
     stations = sorted(stations, key = lambda i: i.get('number', 0))
@@ -186,7 +189,7 @@ def watch(provider, country_code, id):
     base_path = f"/stitch/hls/channel/{id}/master.m3u8"
 
     jwt_required_list = ['625f054c5dfea70007244612', '625f04253e5f6c000708f3b7', '5421f71da6af422839419cb3']
-    
+
     params = {'advertisingId': '',
               'appName': 'web',
               'appVersion': 'unknown',
@@ -253,12 +256,12 @@ def epg_xml(provider, country_code, filename):
         # Check if the provided filename is allowed
         # if filename not in ALLOWED_EPG_FILENAMES:
             return "Invalid filename", 400
-        
+
         # Specify the file path based on the provider and filename
         file_path = f'{filename}'
 
         # Return the file without explicitly opening it
-        if filename in ALLOWED_EPG_FILENAMES: 
+        if filename in ALLOWED_EPG_FILENAMES:
             return send_file(file_path, as_attachment=False, download_name=file_path, mimetype='text/plain')
         elif filename in ALLOWED_GZ_FILENAMES:
             return send_file(file_path, as_attachment=True, download_name=file_path)
