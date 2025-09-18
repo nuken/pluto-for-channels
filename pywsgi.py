@@ -10,8 +10,8 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.20"
-updated_date = "Jan. 18, 2025"
+version = "1.21"
+updated_date = "Sept. 18, 2025"
 
 # Retrieve the port number from env variables
 # Fallback to default if invalid or unspecified
@@ -48,8 +48,14 @@ url = f'<!DOCTYPE html>\
             <title>{provider.capitalize()} Playlist</title>\
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">\
             <style>\
-              ul{{\
+              .url-container {{\
+                display: flex;\
+                align-items: center;\
                 margin-bottom: 10px;\
+              }}\
+              .url-container a {{\
+                flex-grow: 1;\
+                margin-right: 10px;\
               }}\
             </style>\
           </head>\
@@ -62,41 +68,75 @@ url = f'<!DOCTYPE html>\
               </h1>\
               <p class="subtitle">\
                 Last Updated: {updated_date}\
-              '
+              </p>'
 
 @app.route("/")
 def index():
     host = request.host
-    ul = ""
+    html_content = ""
     if all(item in ALLOWED_COUNTRY_CODES for item in pluto_country_list):
+        # ALL Channels
+        html_content += '<div class="box">'
+        html_content += '<h2 class="title is-4">All Channels</h2>'
+        
         pl = f"http://{host}/{provider}/all/playlist.m3u"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></li>\n"
+        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+        
         pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=id"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></li>\n"
+        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+
         pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=slug_only"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></li>\n"
-        ul += f"<br>\n"
+        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+        html_content += '</div>'
+
+        # ALL EPG
+        html_content += '<div class="box">'
+        html_content += '<h2 class="title is-4">All EPG</h2>'
+
         pl = f"http://{host}/{provider}/epg/all/epg-all.xml"
-        ul += f"<li>{provider.upper()} ALL EPG: <a href='{pl}'>{pl}</a></li>\n"
+        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+
         pl = f"http://{host}/{provider}/epg/all/epg-all.xml.gz"
-        ul += f"<li>{provider.upper()} ALL EPG GZ: <a href='{pl}'>{pl}</a></li>\n"
-        ul += f"<br>\n"
+        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+        html_content += '</div>'
+
+
         for code in pluto_country_list:
+            html_content += f'<div class="box">'
+            html_content += f'<h2 class="title is-4">{code.upper()} Channels</h2>'
             pl = f"http://{host}/{provider}/{code}/playlist.m3u"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></li>\n"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+
             pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=id"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></li>\n"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+
             pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=slug_only"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></li>\n"
-            ul += f"<br>\n"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            html_content += '</div>'
+
+            html_content += f'<div class="box">'
+            html_content += f'<h2 class="title is-4">{code.upper()} EPG</h2>'
             pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml"
-            ul += f"<li>{provider.upper()} {code.upper()} EPG: <a href='{pl}'>{pl}</a></li>\n"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            
             pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml.gz"
-            ul += f"<li>{provider.upper()} {code.upper()} EPG GZ: <a href='{pl}'>{pl}</a></li>\n"
-            ul += f"<br>\n"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            html_content += '</div>'
     else:
-        ul += f"<li>INVALID COUNTRY CODE in \"{', '.join(pluto_country_list).upper()}\"</li>\n"
-    return f"{url}<ul>{ul}</ul></div></section></body></html>"
+        html_content += f"<li>INVALID COUNTRY CODE in \"{', '.join(pluto_country_list).upper()}\"</li>\n"
+    
+    html_content += '<script>\
+    function copyToClipboard(text) {\
+        var dummy = document.createElement("textarea");\
+        document.body.appendChild(dummy);\
+        dummy.value = text;\
+        dummy.select();\
+        document.execCommand("copy");\
+        document.body.removeChild(dummy);\
+    }\
+    </script>'
+
+    return f"{url}{html_content}</div></section></body></html>"
 
 @app.route("/<country_code>/token")
 def token(country_code):
