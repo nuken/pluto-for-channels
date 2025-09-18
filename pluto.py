@@ -12,8 +12,7 @@ class Client:
         self.all_channels = {}
         self.username = username
         self.password = password
-
-         self.load_device()
+        self.load_device()
         self.x_forward = {"local": {"X-Forwarded-For":""},
                           "uk": {"X-Forwarded-For":"178.238.11.6"},
                           "ca": {"X-Forwarded-For":"192.206.151.131"},
