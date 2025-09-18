@@ -7,7 +7,7 @@ name: CI - Push Docker to Hub
 on:
   push:
     branches:
-      - 'main'
+      - 'test'
     tags:
       - 'v*.*.*' # This will trigger the action for tags like v1.0.0, v1.2.3, etc.
 
