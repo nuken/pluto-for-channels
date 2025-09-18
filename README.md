@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-Current version: **1.17**
+Current version: **1.21**
 
 # About
 This takes Pluto Live TV Channels and generates an M3U playlist and EPG XMLTV file.
