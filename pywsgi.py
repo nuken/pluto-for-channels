@@ -10,8 +10,8 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.20"
-updated_date = "Jan. 18, 2025"
+version = "1.21"
+updated_date = "Sept. 18, 2025"
 
 # Retrieve the port number from env variables
 # Fallback to default if invalid or unspecified
