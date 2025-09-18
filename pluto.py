@@ -207,6 +207,7 @@ class Client:
         return(filtered_list, None)
 
     def strip_illegal_characters(self, xml_string):
+        if not xml_string: return ""
         illegal_char_pattern = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
         clean_xml_string = illegal_char_pattern.sub('', xml_string)
         return clean_xml_string
@@ -228,7 +229,6 @@ class Client:
 
         desired_timezone = pytz.timezone('UTC')
         start_datetime = datetime.now(desired_timezone)
-        start_time = start_datetime.strftime("%Y-%m-%dT%H:00:00.000Z")
 
         url = "https://service-channels.clusters.pluto.tv/v2/guide/timelines"
         epg_headers = {
@@ -250,7 +250,7 @@ class Client:
         grouped_id_values = [id_values[i:i + group_size] for i in range(0, len(id_values), group_size)]
         
         country_data = []
-        pool = Pool(10) # Create a pool of 10 greenlets
+        pool = Pool(10)
 
         for i in range(range_count):
             current_start_time = (start_datetime + timedelta(hours=i*12)).strftime("%Y-%m-%dT%H:00:00.000Z")
@@ -265,7 +265,7 @@ class Client:
                 }
                 jobs.append(pool.spawn(self._fetch_epg_data, url, params.copy(), epg_headers))
             
-            pool.join() # Wait for all jobs to complete
+            pool.join()
 
             for job in jobs:
                 if job.value:
@@ -283,156 +283,66 @@ class Client:
 
     def read_epg_data(self, resp):
         seriesGenres = {
-            ("Animated",): ["Family Animation", "Cartoons"],
-            ("Educational",): ["Education & Guidance", "Instructional & Educational"],
-            ("News",): ["News and Information", "General News", "News + Opinion", "General News"],
-            ("History",): ["History & Social Studies"],
-            ("Politics",): ["Politics"],
-            ("Action",):
-                [
-                  "Action & Adventure",
-                  "Action Classics",
-                  "Martial Arts",
-                  "Crime Action",
-                  "Family Adventures",
-                  "Action Sci-Fi & Fantasy",
-                  "Action Thrillers",
-                  "African-American Action",
-                ],
+            ("Animated",): ["Family Animation", "Cartoons"],("Educational",): ["Education & Guidance", "Instructional & Educational"],("News",): ["News and Information", "General News", "News + Opinion"],"History": ["History & Social Studies"],"Politics": ["Politics"],
+            ("Action",): ["Action & Adventure","Action Classics","Martial Arts","Crime Action","Family Adventures","Action Sci-Fi & Fantasy","Action Thrillers","African-American Action",],
             ("Adventure",): ["Action & Adventure", "Adventures", "Sci-Fi Adventure"],
-            ("Reality",):
-                [
-                  "Reality",
-                  "Reality Drama",
-                  "Courtroom Reality",
-                  "Occupational Reality",
-                  "Celebrity Reality",
-                ],
-            ("Documentary",):
-                [
-                  "Documentaries",
-                  "Social & Cultural Documentaries",
-                  "Science and Nature Documentaries",
-                  "Miscellaneous Documentaries",
-                  "Crime Documentaries",
-                  "Travel & Adventure Documentaries",
-                  "Sports Documentaries",
-                  "Military Documentaries",
-                  "Political Documentaries",
-                  "Foreign Documentaries",
-                  "Religion & Mythology Documentaries",
-                  "Historical Documentaries",
-                  "Biographical Documentaries",
-                  "Faith & Spirituality Documentaries",
-                ],
-            ("Biography",): ["Biographical Documentaries", "Inspirational Biographies"],
-            ("Science Fiction",): ["Sci-Fi Thrillers", "Sci-Fi Adventure", "Action Sci-Fi & Fantasy"],
-            ("Thriller",): ["Sci-Fi Thrillers", "Thrillers", "Crime Thrillers"],
-            ("Biography",): ["Biographical Documentaries", "Inspirational Biographies"],
-            ("Talk",): ["Talk & Variety", "Talk Show"],
-            ("Variety",): ["Sketch Comedies"],
-            ("Home Improvement",): ["Art & Design", "DIY & How To", "Home Improvement"],
-            ("House/garden",): ["Home & Garden"],
-            ("Cooking",): ["Cooking Instruction", "Food & Wine", "Food Stories"],
-            ("Travel",): ["Travel & Adventure Documentaries", "Travel"],
-            ("Western",): ["Westerns", "Classic Westerns"],
-            ("LGBTQ",): ["Gay & Lesbian", "Gay & Lesbian Dramas", "Gay"],
-            ("Game show",): ["Game Show"],
-            ("Military",): ["Classic War Stories"],
-            ("Comedy",):
-                [
-                  "Cult Comedies",
-                  "Spoofs and Satire",
-                  "Slapstick",
-                  "Classic Comedies",
-                  "Stand-Up",
-                  "Sports Comedies",
-                  "African-American Comedies",
-                  "Showbiz Comedies",
-                  "Sketch Comedies",
-                  "Teen Comedies",
-                  "Latino Comedies",
-                  "Family Comedies",
-                ],
-            ("Crime",): ["Crime Action", "Crime Drama", "Crime Documentaries"],
-            ("Sports",): ["Sports","Sports & Sports Highlights","Sports Documentaries", "Poker & Gambling"],
-            ("Poker & Gambling",): ["Poker & Gambling"],
-            ("Crime drama",): ["Crime Drama"],
-            ("Drama",):
-                [
-                  "Classic Dramas",
-                  "Family Drama",
-                  "Indie Drama",
-                  "Romantic Drama",
-                  "Crime Drama",
-                ],
-            ("Children",): ["Kids", "Children & Family", "Kids' TV", "Cartoons", "Animals", "Family Animation", "Ages 2-4", "Ages 11-12",],
-            ("Animated",): ["Family Animation", "Cartoons"]
-            }
-
+            ("Reality",): ["Reality","Reality Drama","Courtroom Reality","Occupational Reality","Celebrity Reality",],
+            ("Documentary",): ["Documentaries","Social & Cultural Documentaries","Science and Nature Documentaries","Miscellaneous Documentaries","Crime Documentaries","Travel & Adventure Documentaries","Sports Documentaries","Military Documentaries","Political Documentaries","Foreign Documentaries","Religion & Mythology Documentaries","Historical Documentaries","Biographical Documentaries","Faith & Spirituality Documentaries",],
+            ("Biography",): ["Biographical Documentaries", "Inspirational Biographies"],"Science Fiction": ["Sci-Fi Thrillers", "Sci-Fi Adventure"],"Thriller": ["Sci-Fi Thrillers", "Thrillers"],"Talk": ["Talk & Variety", "Talk Show"],"Variety": ["Sketch Comedies"],
+            ("Home Improvement",): ["Art & Design", "DIY & How To", "Home Improvement"],"House/garden": ["Home & Garden"],"Cooking": ["Cooking Instruction", "Food & Wine", "Food Stories"],"Travel": ["Travel & Adventure Documentaries", "Travel"],
+            ("Western",): ["Westerns", "Classic Westerns"],"LGBTQ": ["Gay & Lesbian", "Gay & Lesbian Dramas"],"Game show": ["Game Show"],"Military": ["Classic War Stories"],
+            ("Comedy",): ["Cult Comedies","Spoofs and Satire","Slapstick","Classic Comedies","Stand-Up","Sports Comedies","African-American Comedies","Showbiz Comedies","Sketch Comedies","Teen Comedies","Latino Comedies","Family Comedies",],
+            ("Crime",): ["Crime Action", "Crime Drama", "Crime Documentaries"],"Sports": ["Sports","Sports & Sports Highlights","Sports Documentaries", "Poker & Gambling"],"Drama": ["Classic Dramas","Family Drama","Indie Drama","Romantic Drama",],
+            ("Children",): ["Kids", "Children & Family", "Kids' TV", "Cartoons", "Animals", "Family Animation", "Ages 2-4", "Ages 11-12",]
+        }
         for entry in resp.get("data", []):
             for timeline in entry.get("timelines", []):
                 programme = ET.Element("programme", attrib={"channel": entry["channelId"],
                                                                  "start": datetime.strptime(timeline["start"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z"),
                                                                  "stop": datetime.strptime(timeline["stop"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z")})
                 title = ET.SubElement(programme, "title")
-                title.text = self.strip_illegal_characters(timeline["title"])
-                if timeline.get("episode", {}).get("series", {}).get("type", "") == "live":
-                    if timeline["episode"]["clip"]["originalReleaseDate"] == timeline["start"]:
-                        ET.SubElement(programme, "live")
+                title.text = self.strip_illegal_characters(timeline.get("title"))
+                
+                if timeline.get("episode", {}).get("series", {}).get("type") == "live":
+                    ET.SubElement(programme, "live")
+
                 if timeline.get("episode", {}).get("season"):
-                    episode_num_onscreen = ET.SubElement(programme, "episode-num", attrib={"system": "onscreen"})
-                    episode_num_onscreen.text = f'S{timeline["episode"]["season"]:02d}E{timeline["episode"]["number"]:02d}'
+                    ET.SubElement(programme, "episode-num", attrib={"system": "onscreen"}).text = f'S{timeline["episode"]["season"]:02d}E{timeline["episode"]["number"]:02d}'
                 
-                desc = ET.SubElement(programme, "desc")
-                desc.text = self.strip_illegal_characters(timeline.get("episode", {}).get("description", "")).replace('&quot;', '"')
-                
+                ET.SubElement(programme, "desc").text = self.strip_illegal_characters(timeline.get("episode", {}).get("description"))
+
                 if timeline.get("episode", {}).get("series", {}).get("tile", {}).get("path"):
                     ET.SubElement(programme, "icon", attrib={"src": timeline["episode"]["series"]["tile"]["path"]})
                 
-                date = ET.SubElement(programme, "date")
-                date.text = datetime.strptime(timeline.get("episode", {}).get("clip", {}).get("originalReleaseDate"), "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y%m%d")
+                if timeline.get("episode", {}).get("clip", {}).get("originalReleaseDate"):
+                    ET.SubElement(programme, "date").text = datetime.strptime(timeline["episode"]["clip"]["originalReleaseDate"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y%m%d")
 
                 if timeline.get("episode", {}).get("series", {}).get("_id"):
-                    series_id_pluto = ET.SubElement(programme, "series-id", attrib={"system": "pluto"})
-                    series_id_pluto.text = timeline["episode"]["series"]["_id"]
+                    ET.SubElement(programme, "series-id", attrib={"system": "pluto"}).text = timeline["episode"]["series"]["_id"]
 
-                if timeline["title"].lower() != timeline.get("episode", {}).get("name", "").lower():
-                    sub_title = ET.SubElement(programme, "sub-title")
-                    sub_title.text = self.strip_illegal_characters(timeline.get("episode", {}).get("name", ""))
+                if timeline.get("title","").lower() != timeline.get("episode", {}).get("name", "").lower():
+                    ET.SubElement(programme, "sub-title").text = self.strip_illegal_characters(timeline.get("episode", {}).get("name"))
 
                 categories = []
                 if timeline.get("episode", {}).get("genre"):
                     categories.extend(self.find_tuples_by_value(seriesGenres, timeline["episode"]["genre"]))
                 if timeline.get("episode", {}).get("subGenre"):
                     categories.extend(self.find_tuples_by_value(seriesGenres, timeline["episode"]["subGenre"]))
-
-                unique_list = sorted(list(set(categories)))
-                for category in unique_list:
-                    category_elem = ET.SubElement(programme, "category")
-                    category_elem.text = category
+                
+                for category in sorted(list(set(categories))):
+                    ET.SubElement(programme, "category").text = category
                 
                 yield programme
 
-    def get_all_epg_data(self, country_codes):
-        all_epg_data = []
-        channelIds_seen = set()
-
-        for country in country_codes:
-            self.update_epg(country)
-            for epg_list in self.epg_data.get(country, []):
-                for entry in epg_list.get('data', []):
-                    channelId = entry.get('channelId')
-                    if channelId not in channelIds_seen:
-                        all_epg_data.append(entry)
-                        channelIds_seen.add(channelId)
-        
-        return [{'data': all_epg_data}]
+    def get_all_epg_data(self):
+        all_data = []
+        for country in self.epg_data:
+            all_data.extend(self.epg_data[country])
+        return all_data
 
     def create_xml_file(self, country_code):
         if isinstance(country_code, str):
-            error_code = self.update_epg(country_code)
-            if error_code: return error_code
+            if not self.epg_data.get(country_code): self.update_epg(country_code)
             station_list, error = self.channels(country_code)
             if error: return None, error
             xml_file_path = f"epg-{country_code}.xml"
@@ -442,13 +352,11 @@ class Client:
             xml_file_path = "epg-all.xml"
             station_list, error = self.channels_all()
             if error: return None, error
-            program_data = self.get_all_epg_data(country_code)
+            program_data = self.get_all_epg_data()
         else:
-            print("The variable is neither a string nor a list.")
-            return None
+            return "Invalid country_code type"
 
         compressed_file_path = f"{xml_file_path}.gz"
-
         with open(xml_file_path, "wb") as f:
             f.write(b'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n')
             f.write(b'<!DOCTYPE tv SYSTEM "xmltv.dtd">\n')
@@ -456,21 +364,20 @@ class Client:
 
             for station in station_list:
                 channel = ET.Element("channel", attrib={"id": station["id"]})
-                display_name = ET.SubElement(channel, "display-name")
-                display_name.text = self.strip_illegal_characters(station["name"])
+                ET.SubElement(channel, "display-name").text = self.strip_illegal_characters(station["name"])
                 ET.SubElement(channel, "icon", attrib={"src": station["logo"]})
-                f.write(ET.tostring(channel, encoding='utf-8'))
-                f.write(b'\n')
+                f.write(ET.tostring(channel, encoding='utf-8') + b'\n')
 
             for elem in program_data:
                 for programme_element in self.read_epg_data(elem):
-                    f.write(ET.tostring(programme_element, encoding='utf-8'))
-                    f.write(b'\n')
+                    f.write(ET.tostring(programme_element, encoding='utf-8') + b'\n')
             
             f.write(b'</tv>\n')
 
         with open(xml_file_path, 'rb') as f_in, gzip.open(compressed_file_path, 'wb') as f_out:
             f_out.writelines(f_in)
         
-        self.epg_data = {}
         return None
+
+    def clear_epg_data(self):
+        self.epg_data = {}
