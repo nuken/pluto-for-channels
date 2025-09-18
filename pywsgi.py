@@ -10,8 +10,8 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.21"
-updated_date = "Sept. 18, 2025"
+version = "1.20"
+updated_date = "Jan. 18, 2025"
 
 # Retrieve the port number from env variables
 # Fallback to default if invalid or unspecified
@@ -27,9 +27,9 @@ pluto_country_list = os.environ.get("PLUTO_CODE")
 if pluto_country_list:
    pluto_country_list = pluto_country_list.split(',')
 else:
-   pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr']
+   pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de']
 
-ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'all']
+ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de', 'all']
 # instance of flask application
 app = Flask(__name__)
 provider = "pluto"
@@ -164,6 +164,7 @@ def playlist(provider, country_code):
         m3u += f" tvg-name=\"{''.join(map(str, s.get('tmsid', [])))}\"" if s.get('tmsid') else ""
         m3u += f" tvc-guide-title=\"{''.join(map(str, s.get('name', [])))}\"" if s.get('name') else ""
         m3u += f" tvc-guide-description=\"{remove_non_printable(''.join(map(str, s.get('summary', []))))}\"" if s.get('summary') else ""
+        m3u += f" tvc-guide-categories=\"{''.join(map(str, s.get('group', [])))}\"" if s.get('group') else ""
         m3u += f" tvg-shift=\"{''.join(map(str, s.get('timeShift', [])))}\"" if s.get('timeShift') else ""
         m3u += f",{s.get('name') or s.get('call_sign')}\n"
         m3u += f"{url}\n"

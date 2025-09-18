@@ -13,11 +13,12 @@ class Client:
         self.username = username
         self.password = password
 
-        self.load_device()
+         self.load_device()
         self.x_forward = {"local": {"X-Forwarded-For":""},
                           "uk": {"X-Forwarded-For":"178.238.11.6"},
                           "ca": {"X-Forwarded-For":"192.206.151.131"},
                           "fr": {"X-Forwarded-For":"193.169.64.141"},
+                          "de": {"X-Forwarded-For":"81.173.176.155"},
                           "us_east": {"X-Forwarded-For":"108.82.206.181"},
                           "us_west": {"X-Forwarded-For":"76.81.9.69"},}
 
@@ -212,6 +213,10 @@ class Client:
             seen.add(number)
             if number != elem.get('number'):
                 elem.update({'number': number})
+                case 'de':
+                    offset = 9000
+                    if number < offset:
+                        number += offset
 
         return(filtered_list, None)
 
