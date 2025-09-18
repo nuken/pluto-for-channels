@@ -180,44 +180,44 @@ class Client:
         return(sorted_data, None)
 
     def channels_all(self):
-        all_channel_list = []
-        for key, val in self.all_channels.items():
-            all_channel_list.extend(val)
+    all_channel_list = []
+    for key, val in self.all_channels.items():
+        all_channel_list.extend(val)
 
-        # Using a set to keep track of slugs that have been seen and filter unique ones
-        seen = set()
-        filter_key = 'id'
-        filtered_list = [d for d in all_channel_list if d[filter_key] not in seen and not seen.add(d[filter_key])]
+    # Using a set to keep track of slugs that have been seen and filter unique ones
+    seen = set()
+    filter_key = 'id'
+    filtered_list = [d for d in all_channel_list if d[filter_key] not in seen and not seen.add(d[filter_key])]
 
 
-        seen = set()
-        for elem in filtered_list:
-            # Ensure number value is unique
-            number = elem.get('number')
-            match elem.get('country_code').lower():
-                case 'ca':
-                    offset = 6000
-                    if number < offset:
-                        number += offset
-                case 'uk':
-                    offset = 7000
-                    if number < offset:
-                        number += offset
-                case 'fr':
-                    offset = 8000
-                    if number < offset:
-                        number += offset
-            while number in seen:
-                number += 1
-            seen.add(number)
-            if number != elem.get('number'):
-                elem.update({'number': number})
-                case 'de':
-                    offset = 9000
-                    if number < offset:
-                        number += offset
+    seen = set()
+    for elem in filtered_list:
+        # Ensure number value is unique
+        number = elem.get('number')
+        match elem.get('country_code').lower():
+            case 'ca':
+                offset = 6000
+                if number < offset:
+                    number += offset
+            case 'uk':
+                offset = 7000
+                if number < offset:
+                    number += offset
+            case 'fr':
+                offset = 8000
+                if number < offset:
+                    number += offset
+            case 'de':
+                offset = 9000
+                if number < offset:
+                    number += offset
+        while number in seen:
+            number += 1
+        seen.add(number)
+        if number != elem.get('number'):
+            elem.update({'number': number})
 
-        return(filtered_list, None)
+    return(filtered_list, None)
 
     #########################################################################################
     # EPG Guide Data
