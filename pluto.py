@@ -34,347 +34,208 @@ class Client:
             return self.response_list[country_code], None
 
         boot_headers = {
-            'authority': 'boot.pluto.tv',
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'origin': 'https://pluto.tv',
-            'referer': 'https://pluto.tv/',
-            'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Linux"',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            }
-
+            'authority': 'boot.pluto.tv', 'accept': '*/*', 'accept-language': 'en-US,en;q=0.9', 'origin': 'https://pluto.tv',
+            'referer': 'https://pluto.tv/', 'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Linux"', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site', 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        }
         boot_params = {
-            'appName': 'web',
-            'appVersion': '8.0.0-111b2b9dc00bd0bea9030b30662159ed9e7c8bc6',
-            'deviceVersion': '122.0.0',
-            'deviceModel': 'web',
-            'deviceMake': 'chrome',
-            'deviceType': 'web',
-            'clientID': 'c63f9fbf-47f5-40dc-941c-5628558aec87',
-            'clientModelNumber': '1.0.0',
-            'serverSideAds': 'false',
-            'drmCapabilities': 'widevine:L3',
-            'blockingMode': '',
-            'notificationVersion': '1',
-            'appLaunchCount': '',
-            'lastAppLaunchDate': '',
-            }
-
+            'appName': 'web', 'appVersion': '8.0.0-111b2b9dc00bd0bea9030b30662159ed9e7c8bc6', 'deviceVersion': '122.0.0',
+            'deviceModel': 'web', 'deviceMake': 'chrome', 'deviceType': 'web', 'clientID': 'c63f9fbf-47f5-40dc-941c-5628558aec87',
+            'clientModelNumber': '1.0.0', 'serverSideAds': 'false', 'drmCapabilities': 'widevine:L3', 'blockingMode': '',
+            'notificationVersion': '1', 'appLaunchCount': '', 'lastAppLaunchDate': '',
+        }
         if self.username and self.password:
             boot_params['username'] = self.username
             boot_params['password'] = self.password
 
-        if country_code in self.x_forward.keys():
-            boot_headers.update(self.x_forward.get(country_code))
+        if country_code in self.x_forward:
+            boot_headers.update(self.x_forward[country_code])
 
         try:
             response = self.session.get('https://boot.pluto.tv/v4/start', headers=boot_headers, params=boot_params)
-        except Exception as e:
-            return None, (f"Error Exception type: {type(e).__name__}")
-
-        if (200 <= response.status_code <= 201):
+            response.raise_for_status()
             resp = response.json()
-        else:
-            print(f"HTTP failure {response.status_code}: {response.text}")
-            return None, f"HTTP failure {response.status_code}: {response.text}"
-
-        self.response_list.update({country_code: resp})
-        self.sessionAt.update({country_code: current_date})
-        print(f"New token for {country_code} generated at {(self.sessionAt.get(country_code)).strftime('%Y-%m-%d %H:%M.%S %z')}")
-
-        return self.response_list.get(country_code), None
+            self.response_list[country_code] = resp
+            self.sessionAt[country_code] = current_date
+            print(f"New token for {country_code} generated at {current_date.strftime('%Y-%m-%d %H:%M:%S %z')}")
+            return resp, None
+        except requests.exceptions.RequestException as e:
+            print(f"HTTP failure for {country_code}: {e}")
+            return None, str(e)
 
     def channels(self, country_code):
-        if country_code == 'all':
-            return(self.channels_all())
+        if country_code not in self.all_channels:
+            resp, error = self.resp_data(country_code)
+            if error: return None, error
+            token = resp.get('sessionToken')
+            if not token: return None, "No session token found"
 
-        resp, error = self.resp_data(country_code)
-        if error: return None, error
+            headers = {'authorization': f'Bearer {token}'}
+            if country_code in self.x_forward:
+                headers.update(self.x_forward[country_code])
+            
+            try:
+                # Fetch channels
+                channels_url = "https://service-channels.clusters.pluto.tv/v2/guide/channels"
+                params = {'limit': '1000', 'sort': 'number:asc'}
+                response = self.session.get(channels_url, headers=headers, params=params)
+                response.raise_for_status()
+                channel_list = response.json().get("data", [])
 
-        token = resp.get('sessionToken', None)
-        if token is None: return None, error
-
-        url = f"https://service-channels.clusters.pluto.tv/v2/guide/channels"
-
-        headers = {
-            'authority': 'service-channels.clusters.pluto.tv',
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'authorization': f'Bearer {token}',
-            'origin': 'https://pluto.tv',
-            'referer': 'https://pluto.tv/',
-            }
-
-        params = {
-            'channelIds': '',
-            'offset': '0',
-            'limit': '1000',
-            'sort': 'number:asc',
-            }
-
-        if country_code in self.x_forward.keys():
-            headers.update(self.x_forward.get(country_code))
-
-        try:
-            response = self.session.get(url, params=params, headers=headers)
-        except Exception as e:
-            return None, (f"Error Exception type: {type(e).__name__}")
-
-        if response.status_code != 200:
-            return None, f"HTTP failure {response.status_code}: {response.text}"
-
-        channel_list = response.json().get("data")
-
-        category_url = f"https://service-channels.clusters.pluto.tv/v2/guide/categories"
-
-        try:
-            response = self.session.get(category_url, params=params, headers=headers)
-        except Exception as e:
-            return None, (f"Error Exception type: {type(e).__name__}")
-
-        if response.status_code != 200:
-            return None, f"HTTP failure {response.status_code}: {response.text}"
-
-        categories_data = response.json().get("data")
-
-        categories_list = {}
-        for elem in categories_data:
-            category = elem.get('name')
-            channelIDs = elem.get('channelIDs')
-            for channel in channelIDs:
-                categories_list.update({channel: category})
-
-        stations = []
-        for elem in channel_list:
-            entry = {'id': elem.get('id'),
-                    'name': elem.get('name'),
-                    'slug': elem.get('slug'),
-                    'tmsid': elem.get('tmsid'),
-                    'summary': elem.get('summary'),
-                    'group': categories_list.get(elem.get('id')),
-                    'country_code': country_code}
-            number = elem.get('number')
-            existing_numbers = {channel["number"] for channel in stations}
-            while number in existing_numbers:
-                number += 1
-            color_logo_png = next((image["url"] for image in elem["images"] if image["type"] == "colorLogoPNG"), None)
-            entry.update({'number': number, 'logo': color_logo_png})
-
-            stations.append(entry)
-
-        sorted_data = sorted(stations, key=lambda x: x["number"])
-        self.all_channels.update({country_code: sorted_data})
-        return(sorted_data, None)
+                # Fetch categories
+                categories_url = "https://service-channels.clusters.pluto.tv/v2/guide/categories"
+                response = self.session.get(categories_url, headers=headers, params={'limit': '1000'})
+                response.raise_for_status()
+                categories_data = response.json().get("data", [])
+                
+                categories_map = {chan_id: cat['name'] for cat in categories_data for chan_id in cat.get('channelIDs', [])}
+                
+                stations = []
+                existing_numbers = set()
+                for elem in channel_list:
+                    number = elem.get('number')
+                    while number in existing_numbers:
+                        number += 1
+                    existing_numbers.add(number)
+                    
+                    stations.append({
+                        'id': elem.get('id'), 'name': elem.get('name'), 'slug': elem.get('slug'),
+                        'tmsid': elem.get('tmsid'), 'summary': elem.get('summary'),
+                        'group': categories_map.get(elem.get('id')), 'country_code': country_code,
+                        'number': number,
+                        'logo': next((img['url'] for img in elem.get('images', []) if img.get('type') == 'colorLogoPNG'), None)
+                    })
+                
+                self.all_channels[country_code] = sorted(stations, key=lambda x: x["number"])
+            except requests.exceptions.RequestException as e:
+                return None, str(e)
+        
+        return self.all_channels[country_code], None
 
     def channels_all(self):
-        all_channel_list = []
-        for key, val in self.all_channels.items():
-            all_channel_list.extend(val)
-        seen = set()
-        filter_key = 'id'
-        filtered_list = [d for d in all_channel_list if d[filter_key] not in seen and not seen.add(d[filter_key])]
-        seen = set()
-        for elem in filtered_list:
-            number = elem.get('number')
-            match elem.get('country_code').lower():
-                case 'ca':
-                    offset = 6000
-                    if number < offset:
-                        number += offset
-                case 'uk':
-                    offset = 7000
-                    if number < offset:
-                        number += offset
-                case 'fr':
-                    offset = 8000
-                    if number < offset:
-                        number += offset
-                case 'de':
-                    offset = 9000
-                    if number < offset:
-                        number += offset
-            while number in seen:
-                number += 1
-            seen.add(number)
-            if number != elem.get('number'):
-                elem.update({'number': number})
+        all_channel_list = [chan for country_chans in self.all_channels.values() for chan in country_chans]
+        
+        seen_ids = set()
+        unique_channels = [d for d in all_channel_list if d['id'] not in seen_ids and not seen_ids.add(d['id'])]
 
-        return(filtered_list, None)
+        country_offsets = {'ca': 6000, 'uk': 7000, 'fr': 8000, 'de': 9000}
+        seen_numbers = set()
+        for elem in unique_channels:
+            number = elem.get('number', 0)
+            offset = country_offsets.get(elem.get('country_code', '').lower(), 0)
+            if number < offset:
+                number += offset
+            while number in seen_numbers:
+                number += 1
+            seen_numbers.add(number)
+            elem['number'] = number
+            
+        return sorted(unique_channels, key=lambda x: x['number']), None
 
     def strip_illegal_characters(self, xml_string):
-        if not xml_string: return ""
-        illegal_char_pattern = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
-        clean_xml_string = illegal_char_pattern.sub('', xml_string)
-        return clean_xml_string
+        return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', xml_string or '')
 
     def _fetch_epg_data(self, url, params, headers):
         try:
             response = self.session.get(url, params=params, headers=headers)
-            if response.status_code == 200:
-                return response.json()
-        except Exception as e:
-            print(f"Error fetching EPG data: {e}")
-        return None
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching EPG data for params {params.get('channelIds', '')}: {e}")
+            return None
 
     def update_epg(self, country_code, range_count=3):
         resp, error = self.resp_data(country_code)
-        if error: return None, error
-        token = resp.get('sessionToken', None)
-        if token is None: return None, error
-
-        desired_timezone = pytz.timezone('UTC')
-        start_datetime = datetime.now(desired_timezone)
-
-        url = "https://service-channels.clusters.pluto.tv/v2/guide/timelines"
-        epg_headers = {
-            'authority': 'service-channels.clusters.pluto.tv',
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'authorization': f'Bearer {token}',
-            'origin': 'https://pluto.tv',
-            'referer': 'https://pluto.tv/',
-        }
-        if country_code in self.x_forward.keys():
-            epg_headers.update(self.x_forward.get(country_code))
+        if error: return error
+        token = resp.get('sessionToken')
+        if not token: return "No session token for EPG update"
 
         station_list, error = self.channels(country_code)
-        if error: return None, error
-
-        id_values = [d['id'] for d in station_list]
-        group_size = 100
-        grouped_id_values = [id_values[i:i + group_size] for i in range(0, len(id_values), group_size)]
+        if error: return error
         
-        country_data = []
+        url = "https://service-channels.clusters.pluto.tv/v2/guide/timelines"
+        headers = {'authorization': f'Bearer {token}'}
+        if country_code in self.x_forward:
+            headers.update(self.x_forward[country_code])
+
+        id_groups = [station_list[i:i + 100] for i in range(0, len(station_list), 100)]
         pool = Pool(10)
-
+        country_data = []
+        
+        start_datetime = datetime.now(pytz.utc)
         for i in range(range_count):
-            current_start_time = (start_datetime + timedelta(hours=i*12)).strftime("%Y-%m-%dT%H:00:00.000Z")
+            current_start_time = (start_datetime + timedelta(hours=i * 12)).strftime("%Y-%m-%dT%H:00:00.000Z")
             print(f'Retrieving {country_code} EPG data for {current_start_time}')
-
-            jobs = []
-            for group in grouped_id_values:
-                params = {
-                    'start': current_start_time,
-                    'channelIds': ','.join(map(str, group)),
-                    'duration': '720',
-                }
-                jobs.append(pool.spawn(self._fetch_epg_data, url, params.copy(), epg_headers))
             
-            pool.join()
-
+            jobs = [pool.spawn(self._fetch_epg_data, url, {
+                'start': current_start_time, 'duration': '720',
+                'channelIds': ','.join(d['id'] for d in group)
+            }, headers) for group in id_groups]
+            
             for job in jobs:
-                if job.value:
-                    country_data.append(job.value)
+                if result := job.get():
+                    country_data.append(result)
 
         self.epg_data[country_code] = country_data
         return None
 
-    def find_tuples_by_value(self, dictionary, target_value):
-        result_list = []
-        for key, values in dictionary.items():
-            if target_value in values:
-                result_list.extend(key)
-        return result_list if result_list else [target_value]
-
-    def read_epg_data(self, resp):
-        seriesGenres = {
-            ("Animated",): ["Family Animation", "Cartoons"],("Educational",): ["Education & Guidance", "Instructional & Educational"],("News",): ["News and Information", "General News", "News + Opinion"],"History": ["History & Social Studies"],"Politics": ["Politics"],
-            ("Action",): ["Action & Adventure","Action Classics","Martial Arts","Crime Action","Family Adventures","Action Sci-Fi & Fantasy","Action Thrillers","African-American Action",],
-            ("Adventure",): ["Action & Adventure", "Adventures", "Sci-Fi Adventure"],
-            ("Reality",): ["Reality","Reality Drama","Courtroom Reality","Occupational Reality","Celebrity Reality",],
-            ("Documentary",): ["Documentaries","Social & Cultural Documentaries","Science and Nature Documentaries","Miscellaneous Documentaries","Crime Documentaries","Travel & Adventure Documentaries","Sports Documentaries","Military Documentaries","Political Documentaries","Foreign Documentaries","Religion & Mythology Documentaries","Historical Documentaries","Biographical Documentaries","Faith & Spirituality Documentaries",],
-            ("Biography",): ["Biographical Documentaries", "Inspirational Biographies"],"Science Fiction": ["Sci-Fi Thrillers", "Sci-Fi Adventure"],"Thriller": ["Sci-Fi Thrillers", "Thrillers"],"Talk": ["Talk & Variety", "Talk Show"],"Variety": ["Sketch Comedies"],
-            ("Home Improvement",): ["Art & Design", "DIY & How To", "Home Improvement"],"House/garden": ["Home & Garden"],"Cooking": ["Cooking Instruction", "Food & Wine", "Food Stories"],"Travel": ["Travel & Adventure Documentaries", "Travel"],
-            ("Western",): ["Westerns", "Classic Westerns"],"LGBTQ": ["Gay & Lesbian", "Gay & Lesbian Dramas"],"Game show": ["Game Show"],"Military": ["Classic War Stories"],
-            ("Comedy",): ["Cult Comedies","Spoofs and Satire","Slapstick","Classic Comedies","Stand-Up","Sports Comedies","African-American Comedies","Showbiz Comedies","Sketch Comedies","Teen Comedies","Latino Comedies","Family Comedies",],
-            ("Crime",): ["Crime Action", "Crime Drama", "Crime Documentaries"],"Sports": ["Sports","Sports & Sports Highlights","Sports Documentaries", "Poker & Gambling"],"Drama": ["Classic Dramas","Family Drama","Indie Drama","Romantic Drama",],
-            ("Children",): ["Kids", "Children & Family", "Kids' TV", "Cartoons", "Animals", "Family Animation", "Ages 2-4", "Ages 11-12",]
-        }
+    def _generate_programme_elements(self, resp):
         for entry in resp.get("data", []):
             for timeline in entry.get("timelines", []):
-                programme = ET.Element("programme", attrib={"channel": entry["channelId"],
-                                                                 "start": datetime.strptime(timeline["start"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z"),
-                                                                 "stop": datetime.strptime(timeline["stop"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z")})
-                title = ET.SubElement(programme, "title")
-                title.text = self.strip_illegal_characters(timeline.get("title"))
-                
-                if timeline.get("episode", {}).get("series", {}).get("type") == "live":
-                    ET.SubElement(programme, "live")
-
-                if timeline.get("episode", {}).get("season"):
-                    ET.SubElement(programme, "episode-num", attrib={"system": "onscreen"}).text = f'S{timeline["episode"]["season"]:02d}E{timeline["episode"]["number"]:02d}'
-                
-                ET.SubElement(programme, "desc").text = self.strip_illegal_characters(timeline.get("episode", {}).get("description"))
-
-                if timeline.get("episode", {}).get("series", {}).get("tile", {}).get("path"):
-                    ET.SubElement(programme, "icon", attrib={"src": timeline["episode"]["series"]["tile"]["path"]})
-                
-                if timeline.get("episode", {}).get("clip", {}).get("originalReleaseDate"):
-                    ET.SubElement(programme, "date").text = datetime.strptime(timeline["episode"]["clip"]["originalReleaseDate"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime("%Y%m%d")
-
-                if timeline.get("episode", {}).get("series", {}).get("_id"):
-                    ET.SubElement(programme, "series-id", attrib={"system": "pluto"}).text = timeline["episode"]["series"]["_id"]
-
-                if timeline.get("title","").lower() != timeline.get("episode", {}).get("name", "").lower():
-                    ET.SubElement(programme, "sub-title").text = self.strip_illegal_characters(timeline.get("episode", {}).get("name"))
-
-                categories = []
-                if timeline.get("episode", {}).get("genre"):
-                    categories.extend(self.find_tuples_by_value(seriesGenres, timeline["episode"]["genre"]))
-                if timeline.get("episode", {}).get("subGenre"):
-                    categories.extend(self.find_tuples_by_value(seriesGenres, timeline["episode"]["subGenre"]))
-                
-                for category in sorted(list(set(categories))):
-                    ET.SubElement(programme, "category").text = category
-                
-                yield programme
-
-    def get_all_epg_data(self):
-        all_data = []
-        for country in self.epg_data:
-            all_data.extend(self.epg_data[country])
-        return all_data
+                try:
+                    programme = ET.Element("programme", attrib={
+                        "channel": entry["channelId"],
+                        "start": datetime.strptime(timeline["start"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z"),
+                        "stop": datetime.strptime(timeline["stop"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc).strftime("%Y%m%d%H%M%S %z")
+                    })
+                    ET.SubElement(programme, "title").text = self.strip_illegal_characters(timeline.get("title"))
+                    if timeline.get("episode"):
+                        ep = timeline["episode"]
+                        ET.SubElement(programme, "desc").text = self.strip_illegal_characters(ep.get("description"))
+                        if "season" in ep and "number" in ep:
+                            ET.SubElement(programme, "episode-num", system="onscreen").text = f'S{ep["season"]:02d}E{ep["number"]:02d}'
+                        if ep.get("series", {}).get("tile", {}).get("path"):
+                             ET.SubElement(programme, "icon", src=ep["series"]["tile"]["path"])
+                    yield programme
+                except (KeyError, TypeError) as e:
+                    # Skip malformed timeline entries
+                    print(f"Skipping malformed EPG entry: {timeline.get('title', 'N/A')}, Error: {e}")
+                    continue
 
     def create_xml_file(self, country_code):
-        if isinstance(country_code, str):
-            if not self.epg_data.get(country_code): self.update_epg(country_code)
-            station_list, error = self.channels(country_code)
-            if error: return None, error
-            xml_file_path = f"epg-{country_code}.xml"
+        is_list = isinstance(country_code, list)
+        station_list, error = self.channels_all() if is_list else self.channels(country_code)
+        if error: return error
+
+        xml_file_path = "epg-all.xml" if is_list else f"epg-{country_code}.xml"
+        program_data = []
+        if is_list:
+            for code in country_code:
+                program_data.extend(self.epg_data.get(code, []))
+        else:
             program_data = self.epg_data.get(country_code, [])
 
-        elif isinstance(country_code, list):
-            xml_file_path = "epg-all.xml"
-            station_list, error = self.channels_all()
-            if error: return None, error
-            program_data = self.get_all_epg_data()
-        else:
-            return "Invalid country_code type"
-
-        compressed_file_path = f"{xml_file_path}.gz"
         with open(xml_file_path, "wb") as f:
-            f.write(b'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n')
+            f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(b'<!DOCTYPE tv SYSTEM "xmltv.dtd">\n')
-            f.write(b'<tv generator-info-name="jgomez177">\n')
+            f.write(b'<tv generator-info-name="pluto-for-channels">\n')
 
             for station in station_list:
-                channel = ET.Element("channel", attrib={"id": station["id"]})
+                channel = ET.Element("channel", id=station["id"])
                 ET.SubElement(channel, "display-name").text = self.strip_illegal_characters(station["name"])
-                ET.SubElement(channel, "icon", attrib={"src": station["logo"]})
+                if station.get("logo"):
+                    ET.SubElement(channel, "icon", src=station["logo"])
                 f.write(ET.tostring(channel, encoding='utf-8') + b'\n')
 
-            for elem in program_data:
-                for programme_element in self.read_epg_data(elem):
+            for resp in program_data:
+                for programme_element in self._generate_programme_elements(resp):
                     f.write(ET.tostring(programme_element, encoding='utf-8') + b'\n')
             
             f.write(b'</tv>\n')
-
-        with open(xml_file_path, 'rb') as f_in, gzip.open(compressed_file_path, 'wb') as f_out:
+        
+        print(f"Successfully created {xml_file_path}")
+        with open(xml_file_path, 'rb') as f_in, gzip.open(f"{xml_file_path}.gz", 'wb') as f_out:
             f_out.writelines(f_in)
         
         return None
