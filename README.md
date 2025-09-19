@@ -20,6 +20,17 @@ Site 2
 
 # Changes
 
+ - Version 1.25:
+      - Now runs the entire process of creating the guide files once, immediately when it starts up. The background scheduler then takes over for all future updates.
+      - Added rotating User-Agent strings from a list of common browser agents to make the script appear more like a regular user and reduce the risk of being blocked by Pluto TV's servers.
+      - The application no longer holds the entire multi-megabyte EPG file in memory while building it. Instead, it processes the guide data and writes it directly to the .xml file piece by piece.
+      - Instead of requesting guide data from the Pluto TV server one chunk at a time, the script now requests up to 10 chunks simultaneously.
+ - Version 1.24:
+      - Internal, not released.
+ - Version 1.23:
+      - Internal, not released. 
+ - Version 1.22:
+      - Internal, not released.
   - Version 1.21:
       - Added support for username and password authentication.
   - Version 1.20:
