@@ -58,7 +58,7 @@ Site 2
       - Added group-title to playlist
 
 # Running
-
+```
 docker run -d --restart unless-stopped --network=host -e PLUTO_PORT=[your_port_number_here] -e PLUTO_USERNAME='your_username' -e PLUTO_PASSWORD='your_password' --name pluto-for-channels rcvaughn2/pluto-for-channels:main
 ```
 
