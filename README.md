@@ -20,6 +20,9 @@ Site 2
 
 # Changes
 
+ - Version 1.26:
+      - Updated Python version and build.
+      - Added token verify endpoint.   
  - Version 1.25:
       - Now runs the entire process of creating the guide files once, immediately when it starts up. The background scheduler then takes over for all future updates.
       - Added rotating User-Agent strings from a list of common browser agents to make the script appear more like a regular user and reduce the risk of being blocked by Pluto TV's servers.
