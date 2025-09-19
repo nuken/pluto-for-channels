@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.20
+FROM python:3.13-slim-bookworm
 
 EXPOSE 7777/tcp
 
