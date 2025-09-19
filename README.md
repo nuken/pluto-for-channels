@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-**Test Version 1.25 (Subject to breaking)**
+**Test Version 1.26 (Subject to breaking)**
 
 **This version needs testers. I made a lot of changes that may or may not work under different setups. Your feedback is appreciated.**
 
@@ -39,6 +39,41 @@ You can retrieve the playlist and EPG via the status page.
 ```
 [http://127.0.0.1](http://127.0.0.1):[your_port_number_here]
 ```
+### **docker-compose.yml**
+
+
+```yaml
+version: '3.8'
+
+services:
+  pluto-for-channels:
+    image: rcvaughn2/pluto-for-channels:test
+    container_name: pluto-for-channels
+    restart: unless-stopped
+    ports:
+      # Map your desired host port to the container's port 7777
+      - "7777:7777"
+    environment:
+      # Your Pluto TV username. Use single quotes if it contains special characters.
+      - PLUTO_USERNAME='YOUR_USERNAME'
+      # Your Pluto TV password. Use single quotes if it contains special characters.
+      - PLUTO_PASSWORD='YOUR_PASSWORD'
+      # Optional: Customize the country codes.
+      # Default: 'local,us_east,us_west,ca,uk,fr,de,all'
+      - PLUTO_CODE='local,us_east,us_west,ca,uk,fr,de,all'
+```
+
+### **How to Use in Portainer**
+
+1.  In Portainer, navigate to **Stacks**.
+2.  Click **Add stack**.
+3.  Give it a name (e.g., `pluto`).
+4.  Choose the **Web editor** option.
+5.  Paste the `docker-compose.yml` content from above into the editor.
+6.  **Important:** Edit the environment variables for `PLUTO_USERNAME` and `PLUTO_PASSWORD` with your credentials. You can also change the host port if `7777` is already in use on your system.
+7.  Click **Deploy the stack**.
+
+Portainer will now pull the image and create the container with all your specified settings.
 
 ## Environement Variables
 
