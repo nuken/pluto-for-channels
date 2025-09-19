@@ -1,4 +1,4 @@
-import uuid, requests, json, pytz, gzip, re
+import uuid, requests, json, pytz, gzip, re, random
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 from gevent.pool import Pool
@@ -13,6 +13,12 @@ class Client:
         self.all_channels = {}
         self.username = username
         self.password = password
+        self.user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+        ]
         self.load_device()
         self.x_forward = {"local": {"X-Forwarded-For":""},
                           "uk": {"X-Forwarded-For":"178.238.11.6"},
@@ -37,7 +43,7 @@ class Client:
             'authority': 'boot.pluto.tv', 'accept': '*/*', 'accept-language': 'en-US,en;q=0.9', 'origin': 'https://pluto.tv',
             'referer': 'https://pluto.tv/', 'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
             'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Linux"', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site', 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'sec-fetch-site': 'same-site', 'user-agent': random.choice(self.user_agents),
         }
         boot_params = {
             'appName': 'web', 'appVersion': '8.0.0-111b2b9dc00bd0bea9030b30662159ed9e7c8bc6', 'deviceVersion': '122.0.0',
