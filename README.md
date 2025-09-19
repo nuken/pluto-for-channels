@@ -33,6 +33,7 @@ Site 2
       - Internal, not released.
   - Version 1.21:
       - Added support for username and password authentication.
+      - Added Pluto Germany.
   - Version 1.20:
       - additional error handling and thread monitoring.
   - Version 1.18:
