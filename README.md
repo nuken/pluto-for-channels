@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-Current version: **1.25**
+Current version: **1.21**
 
 # About
 
