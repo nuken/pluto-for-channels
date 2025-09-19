@@ -8,8 +8,8 @@ import os, sys, importlib, schedule, time, re, uuid, unicodedata
 from urllib.parse import urlparse, urlencode
 from datetime import datetime
 
-version = "1.26"  # Updated version
-updated_date = "Sept. 19, 2025"
+version = "1.25"  # Updated version
+updated_date = "Sept. 18, 2025"
 
 try:
     port = int(os.environ.get("PLUTO_PORT", 7777))
@@ -66,6 +66,17 @@ def index():
 
     html_content += '<script>function copyToClipboard(text){navigator.clipboard.writeText(text);}</script></div></section></body></html>'
     return html_content
+
+@app.route("/verify")
+def verify_credentials():
+    # Use a default country code to test authentication
+    country_code_to_test = 'us_east'
+    _, error = providers[provider].resp_data(country_code_to_test)
+    
+    if error:
+        return f"Credential verification failed. Error: {error}", 500
+    else:
+        return "Credential verification successful! A token was generated.", 200
 
 @app.get("/<provider>/<country_code>/playlist.m3u")
 def playlist(provider, country_code):
