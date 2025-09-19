@@ -8,7 +8,7 @@ import os, sys, importlib, schedule, time, re, uuid, unicodedata
 from urllib.parse import urlparse, urlencode
 from datetime import datetime
 
-version = "1.24"  # Updated version
+version = "1.25"  # Updated version
 updated_date = "Sept. 18, 2025"
 
 try:
@@ -18,7 +18,7 @@ except (ValueError, TypeError):
 
 pluto_username = os.environ.get("PLUTO_USERNAME")
 pluto_password = os.environ.get("PLUTO_PASSWORD")
-pluto_country_list_str = os.environ.get("PLUTO_CODE", 'local,us_east,us_west,ca,uk,fr,de')
+pluto_country_list_str = os.environ.get("PLUTO_CODE", 'local,us_east,us_west,ca,uk,fr,de,all')
 pluto_country_list = [code.strip() for code in pluto_country_list_str.split(',')]
 
 ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de', 'all']
@@ -34,9 +34,38 @@ def remove_non_printable(s):
 @app.route("/")
 def index():
     host = request.host
-    # ... (HTML content remains the same, no changes needed here) ...
-    # For brevity, the HTML string is omitted, but it is unchanged from your previous version.
-    return "<html>...</html>" # Placeholder for the large HTML string
+    html_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{provider.capitalize()} Playlist</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css"><style>.url-container{{display:flex;align-items:center;margin-bottom:10px}}.url-container a{{flex-grow:1;margin-right:10px}}</style></head><body><section class="section"><div class="container"><h1 class="title">{provider.capitalize()} Playlist <span class="tag">v{version}</span></h1><p class="subtitle">Last Updated: {updated_date}</p>'
+    
+    if all(item in ALLOWED_COUNTRY_CODES for item in pluto_country_list):
+        if 'all' in pluto_country_list:
+            html_content += '<div class="box"><h2 class="title is-4">All Channels</h2>'
+            pl = f"http://{host}/{provider}/all/playlist.m3u"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            html_content += '</div>'
+            html_content += '<div class="box"><h2 class="title is-4">All EPG</h2>'
+            pl = f"http://{host}/{provider}/epg/all/epg-all.xml"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            pl_gz = f"http://{host}/{provider}/epg/all/epg-all.xml.gz"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl_gz}\' target="_blank" rel="noopener noreferrer">{pl_gz}</a><button class="button is-info" onclick="copyToClipboard(\'{pl_gz}\')">Copy</button></div>'
+            html_content += '</div>'
+
+        for code in pluto_country_list:
+            if code != 'all':
+                html_content += f'<div class="box"><h2 class="title is-4">{code.upper()} Channels</h2>'
+                pl = f"http://{host}/{provider}/{code}/playlist.m3u"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+                html_content += '</div>'
+                html_content += f'<div class="box"><h2 class="title is-4">{code.upper()} EPG</h2>'
+                pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+                pl_gz = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml.gz"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl_gz}\' target="_blank" rel="noopener noreferrer">{pl_gz}</a><button class="button is-info" onclick="copyToClipboard(\'{pl_gz}\')">Copy</button></div>'
+                html_content += '</div>'
+    else:
+        html_content += f"<p>Invalid country code found in environment variables.</p>"
+
+    html_content += '<script>function copyToClipboard(text){navigator.clipboard.writeText(text);}</script></div></section></body></html>'
+    return html_content
 
 @app.get("/<provider>/<country_code>/playlist.m3u")
 def playlist(provider, country_code):
@@ -50,8 +79,14 @@ def playlist(provider, country_code):
     
     m3u_lines = ["#EXTM3U"]
     for s in sorted(stations, key=lambda i: i.get('number', 0)):
-        line_info = f"#EXTINF:-1 channel-id=\"{provider}-{s.get('id') if channel_id_format == 'id' else s.get('slug')}\""
-        # ... other m3u attributes ...
+        if channel_id_format == 'id':
+            chan_id_str = f"{provider}-{s.get('id')}"
+        elif channel_id_format == 'slug_only':
+            chan_id_str = s.get('slug')
+        else:
+            chan_id_str = f"{provider}-{s.get('slug')}"
+
+        line_info = f"#EXTINF:-1 channel-id=\"{chan_id_str}\" tvg-id=\"{s.get('id', '')}\" tvg-chno=\"{s.get('number', '')}\" group-title=\"{s.get('group', '')}\" tvg-logo=\"{s.get('logo', '')}\""
         m3u_lines.append(f"{line_info},{s.get('name', '')}")
         m3u_lines.append(f"http://{host}/{provider}/{country_code}/watch/{s.get('id')}")
     
@@ -82,46 +117,35 @@ def epg_xml(provider, country_code, filename):
     return send_file(filename, as_attachment=filename.endswith('.gz'), mimetype=mimetype)
 
 def run_epg_scheduler():
-    """Fetches EPG data and creates all required XML files."""
     print("[INFO] Running EPG Generation...")
     
-    # Use a set to avoid duplicate country codes
     active_codes = set(c for c in pluto_country_list if c in ALLOWED_COUNTRY_CODES and c != 'all')
     
-    # First, update EPG for all individual countries
     for code in active_codes:
-        error = providers[provider].update_epg(code)
-        if error:
+        if error := providers[provider].update_epg(code):
             print(f"Could not update EPG for {code}: {error}")
 
-    # Now, create the individual XML files
     for code in active_codes:
-        error = providers[provider].create_xml_file(code)
-        if error:
+        if error := providers[provider].create_xml_file(code):
             print(f"Could not create XML file for {code}: {error}")
 
-    # Finally, create the combined 'all' file if requested
     if 'all' in pluto_country_list:
         print("Creating combined EPG file for all countries.")
-        error = providers[provider].create_xml_file(list(active_codes))
-        if error:
+        if error := providers[provider].create_xml_file(list(active_codes)):
             print(f"Could not create combined XML file: {error}")
     
     providers[provider].clear_epg_data()
     print("[INFO] EPG Generation Complete.")
 
 def background_scheduler():
-    """Runs the scheduler in a loop in a background thread."""
     schedule.every(2).hours.do(run_epg_scheduler)
     while True:
         schedule.run_pending()
         time.sleep(60)
 
 if __name__ == '__main__':
-    # Run the EPG generation once on startup in the main thread
     run_epg_scheduler()
 
-    # Start the background thread for subsequent updates
     scheduler = Thread(target=background_scheduler, daemon=True)
     scheduler.start()
     
