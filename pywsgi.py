@@ -1,36 +1,27 @@
+from gevent import monkey
+monkey.patch_all()
+
 from gevent.pywsgi import WSGIServer
 from flask import Flask, redirect, request, Response, send_file
 from threading import Thread
 import os, sys, importlib, schedule, time, re, uuid, unicodedata
-from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
-from datetime import datetime, timedelta
+from urllib.parse import urlparse, urlencode
+from datetime import datetime
 
-# import flask module
-from gevent import monkey
-monkey.patch_all()
-
-
-version = "1.21"
+version = "1.25"  # Updated version
 updated_date = "Sept. 18, 2025"
 
-# Retrieve the port number from env variables
-# Fallback to default if invalid or unspecified
 try:
     port = int(os.environ.get("PLUTO_PORT", 7777))
-except:
+except (ValueError, TypeError):
     port = 7777
 
 pluto_username = os.environ.get("PLUTO_USERNAME")
 pluto_password = os.environ.get("PLUTO_PASSWORD")
-
-pluto_country_list = os.environ.get("PLUTO_CODE")
-if pluto_country_list:
-   pluto_country_list = pluto_country_list.split(',')
-else:
-   pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de']
+pluto_country_list_str = os.environ.get("PLUTO_CODE", 'local,us_east,us_west,ca,uk,fr,de,all')
+pluto_country_list = [code.strip() for code in pluto_country_list_str.split(',')]
 
 ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de', 'all']
-# instance of flask application
 app = Flask(__name__)
 provider = "pluto"
 providers = {
@@ -38,337 +29,125 @@ providers = {
 }
 
 def remove_non_printable(s):
-    return ''.join([char for char in s if not unicodedata.category(char).startswith('C')])
-
-url = f'<!DOCTYPE html>\
-        <html>\
-          <head>\
-            <meta charset="utf-8">\
-            <meta name="viewport" content="width=device-width, initial-scale=1">\
-            <title>{provider.capitalize()} Playlist</title>\
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">\
-            <style>\
-              .url-container {{\
-                display: flex;\
-                align-items: center;\
-                margin-bottom: 10px;\
-              }}\
-              .url-container a {{\
-                flex-grow: 1;\
-                margin-right: 10px;\
-              }}\
-            </style>\
-          </head>\
-          <body>\
-          <section class="section">\
-            <div class="container">\
-              <h1 class="title">\
-                {provider.capitalize()} Playlist\
-                <span class="tag">v{version}</span>\
-              </h1>\
-              <p class="subtitle">\
-                Last Updated: {updated_date}\
-              </p>'
+    return ''.join(c for c in s if unicodedata.category(c)[0] != 'C')
 
 @app.route("/")
 def index():
     host = request.host
-    html_content = ""
+    html_content = f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{provider.capitalize()} Playlist</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css"><style>.url-container{{display:flex;align-items:center;margin-bottom:10px}}.url-container a{{flex-grow:1;margin-right:10px}}</style></head><body><section class="section"><div class="container"><h1 class="title">{provider.capitalize()} Playlist <span class="tag">v{version}</span></h1><p class="subtitle">Last Updated: {updated_date}</p>'
+    
     if all(item in ALLOWED_COUNTRY_CODES for item in pluto_country_list):
-        # ALL Channels
-        html_content += '<div class="box">'
-        html_content += '<h2 class="title is-4">All Channels</h2>'
-        
-        pl = f"http://{host}/{provider}/all/playlist.m3u"
-        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-        
-        pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=id"
-        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-
-        pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=slug_only"
-        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-        html_content += '</div>'
-
-        # ALL EPG
-        html_content += '<div class="box">'
-        html_content += '<h2 class="title is-4">All EPG</h2>'
-
-        pl = f"http://{host}/{provider}/epg/all/epg-all.xml"
-        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-
-        pl = f"http://{host}/{provider}/epg/all/epg-all.xml.gz"
-        html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-        html_content += '</div>'
-
+        if 'all' in pluto_country_list:
+            html_content += '<div class="box"><h2 class="title is-4">All Channels</h2>'
+            pl = f"http://{host}/{provider}/all/playlist.m3u"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            html_content += '</div>'
+            html_content += '<div class="box"><h2 class="title is-4">All EPG</h2>'
+            pl = f"http://{host}/{provider}/epg/all/epg-all.xml"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+            pl_gz = f"http://{host}/{provider}/epg/all/epg-all.xml.gz"
+            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl_gz}\' target="_blank" rel="noopener noreferrer">{pl_gz}</a><button class="button is-info" onclick="copyToClipboard(\'{pl_gz}\')">Copy</button></div>'
+            html_content += '</div>'
 
         for code in pluto_country_list:
-            html_content += f'<div class="box">'
-            html_content += f'<h2 class="title is-4">{code.upper()} Channels</h2>'
-            pl = f"http://{host}/{provider}/{code}/playlist.m3u"
-            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-
-            pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=id"
-            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-
-            pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=slug_only"
-            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-            html_content += '</div>'
-
-            html_content += f'<div class="box">'
-            html_content += f'<h2 class="title is-4">{code.upper()} EPG</h2>'
-            pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml"
-            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-            
-            pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml.gz"
-            html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
-            html_content += '</div>'
+            if code != 'all':
+                html_content += f'<div class="box"><h2 class="title is-4">{code.upper()} Channels</h2>'
+                pl = f"http://{host}/{provider}/{code}/playlist.m3u"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+                html_content += '</div>'
+                html_content += f'<div class="box"><h2 class="title is-4">{code.upper()} EPG</h2>'
+                pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl}\' target="_blank" rel="noopener noreferrer">{pl}</a><button class="button is-info" onclick="copyToClipboard(\'{pl}\')">Copy</button></div>'
+                pl_gz = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml.gz"
+                html_content += f'<div class="url-container"><a class="button is-link is-light" href=\'{pl_gz}\' target="_blank" rel="noopener noreferrer">{pl_gz}</a><button class="button is-info" onclick="copyToClipboard(\'{pl_gz}\')">Copy</button></div>'
+                html_content += '</div>'
     else:
-        html_content += f"<li>INVALID COUNTRY CODE in \"{', '.join(pluto_country_list).upper()}\"</li>\n"
-    
-    html_content += '<script>\
-    function copyToClipboard(text) {\
-        var dummy = document.createElement("textarea");\
-        document.body.appendChild(dummy);\
-        dummy.value = text;\
-        dummy.select();\
-        document.execCommand("copy");\
-        document.body.removeChild(dummy);\
-    }\
-    </script>'
+        html_content += f"<p>Invalid country code found in environment variables.</p>"
 
-    return f"{url}{html_content}</div></section></body></html>"
-
-@app.route("/<country_code>/token")
-def token(country_code):
-    resp, error = providers[provider].resp_data(country_code)
-    if error: return f"ERROR: {error}", 400
-    token = resp.get('sessionToken', None)
-    return(token)
-
-@app.route("/<country_code>/resp")
-def resp(country_code):
-    resp, error = providers[provider].resp_data(country_code)
-    if error: return f"ERROR: {error}", 400
-    # token = resp.get('sessionToken', None)
-    return(resp)
-
-@app.route("/<provider>/<country_code>/channels")
-def channels(provider, country_code):
-    # host = request.host
-    channels, error = providers[provider].channels(country_code)
-    if error: return f"ERROR: {error}", 400
-    return(channels)
-
-@app.get("/<provider>/<country_code>/epg.json")
-def epg_json(provider, country_code):
-        epg, err = providers[provider].epg_json(country_code)
-        if err: return err
-        return epg.get(country_code)
-
-@app.get("/<provider>/<country_code>/stitcher.json")
-def stitch_json(provider, country_code):
-    resp, error= providers[provider].resp_data(country_code)
-    if error: return error, 500
-    return resp
+    html_content += '<script>function copyToClipboard(text){navigator.clipboard.writeText(text);}</script></div></section></body></html>'
+    return html_content
 
 @app.get("/<provider>/<country_code>/playlist.m3u")
 def playlist(provider, country_code):
-    if country_code.lower() == 'all':
-        stations, err = providers[provider].channels_all()
-    elif country_code.lower() in ALLOWED_COUNTRY_CODES:
-        stations, err = providers[provider].channels(country_code)
-    else: # country_code not in ALLOWED_COUNTRY_CODES
-        return "Invalid county code", 400
+    is_all = country_code.lower() == 'all'
+    stations, err = providers[provider].channels_all() if is_all else providers[provider].channels(country_code)
 
+    if err: return str(err), 500
+    
     host = request.host
     channel_id_format = request.args.get('channel_id_format','').lower()
-
-    if err is not None:
-        return err, 500
-    stations = sorted(stations, key = lambda i: i.get('number', 0))
-
-    m3u = "#EXTM3U\r\n\r\n"
-    for s in stations:
-        url = f"http://{host}/{provider}/{country_code}/watch/{s.get('watchId') or s.get('id')}\n\n"
-
+    
+    m3u_lines = ["#EXTM3U"]
+    for s in sorted(stations, key=lambda i: i.get('number', 0)):
         if channel_id_format == 'id':
-            m3u += f"#EXTINF:-1 channel-id=\"{provider}-{s.get('id')}\""
+            chan_id_str = f"{provider}-{s.get('id')}"
         elif channel_id_format == 'slug_only':
-            m3u += f"#EXTINF:-1 channel-id=\"{s.get('slug')}\""
+            chan_id_str = s.get('slug')
         else:
-            m3u += f"#EXTINF:-1 channel-id=\"{provider}-{s.get('slug')}\""
-        m3u += f" tvg-id=\"{s.get('id')}\""
-        m3u += f" tvg-chno=\"{''.join(map(str, str(s.get('number', []))))}\"" if s.get('number') else ""
-        m3u += f" group-title=\"{''.join(map(str, s.get('group', [])))}\"" if s.get('group') else ""
-        m3u += f" tvg-logo=\"{''.join(map(str, s.get('logo', [])))}\"" if s.get('logo') else ""
-        m3u += f" tvg-name=\"{''.join(map(str, s.get('tmsid', [])))}\"" if s.get('tmsid') else ""
-        m3u += f" tvc-guide-title=\"{''.join(map(str, s.get('name', [])))}\"" if s.get('name') else ""
-        m3u += f" tvc-guide-description=\"{remove_non_printable(''.join(map(str, s.get('summary', []))))}\"" if s.get('summary') else ""
-        m3u += f" tvc-guide-categories=\"{''.join(map(str, s.get('group', [])))}\"" if s.get('group') else ""
-        m3u += f" tvg-shift=\"{''.join(map(str, s.get('timeShift', [])))}\"" if s.get('timeShift') else ""
-        m3u += f",{s.get('name') or s.get('call_sign')}\n"
-        m3u += f"{url}\n"
+            chan_id_str = f"{provider}-{s.get('slug')}"
 
-    response = Response(m3u, content_type='audio/x-mpegurl')
-    return (response)
-
-@app.get("/mjh_compatible/<provider>/<country_code>/playlist.m3u")
-def playlist_mjh_compatible(provider, country_code):
-    host = request.host
-    return (redirect(f"http://{host}/{provider}/{country_code}/playlist.m3u?compatibility=id"))
-
-@app.get("/maddox_compatible/<provider>/<country_code>/playlist.m3u")
-def playlist_maddox_compatible(provider, country_code):
-    host = request.host
-    return (redirect(f"http://{host}/{provider}/{country_code}/playlist.m3u?compatibility=slug_only"))
+        line_info = f"#EXTINF:-1 channel-id=\"{chan_id_str}\" tvg-id=\"{s.get('id', '')}\" tvg-chno=\"{s.get('number', '')}\" group-title=\"{s.get('group', '')}\" tvg-logo=\"{s.get('logo', '')}\""
+        m3u_lines.append(f"{line_info},{s.get('name', '')}")
+        m3u_lines.append(f"http://{host}/{provider}/{country_code}/watch/{s.get('id')}")
+    
+    return Response("\n".join(m3u_lines), content_type='audio/x-mpegurl')
 
 @app.route("/<provider>/<country_code>/watch/<id>")
 def watch(provider, country_code, id):
-    client_id = providers[provider].load_device()
-    sid = uuid.uuid4()
-    stitcher = "https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv"
-    base_path = f"/stitch/hls/channel/{id}/master.m3u8"
-
-    jwt_required_list = ['625f054c5dfea70007244612', '625f04253e5f6c000708f3b7', '5421f71da6af422839419cb3']
-
-    params = {'advertisingId': '',
-              'appName': 'web',
-              'appVersion': 'unknown',
-              'appStoreUrl': '',
-              'architecture': '',
-              'buildVersion': '',
-              'clientTime': '0',
-              'deviceDNT': '0',
-              'deviceId': client_id,
-              'deviceMake': 'Chrome',
-              'deviceModel': 'web',
-              'deviceType': 'web',
-              'deviceVersion': 'unknown',
-              'includeExtendedEvents': 'false',
-              'sid': sid,
-              'userId': '',
-              'serverSideAds': 'true'
+    resp, error = providers[provider].resp_data(country_code)
+    if error: return str(error), 500
+    
+    params = {
+        'advertisingId': '', 'appName': 'web', 'appVersion': 'unknown', 'deviceId': providers[provider].load_device(),
+        'deviceMake': 'Chrome', 'deviceModel': 'web', 'deviceType': 'web', 'sid': uuid.uuid4(),
+        'jwt': resp.get('sessionToken',''), 'masterJWTPassthrough': 'true'
     }
-
-    if id in jwt_required_list:
-        resp, error= providers[provider].resp_data(country_code)
-        if error: return error, 500
-        # print(json.dumps(resp, indent=2))
-        token = resp.get('sessionToken','')
-        stitcherParams = resp.get("stitcherParams",'')
-        video_url = f'{stitcher}/v2{base_path}?{stitcherParams}&jwt={token}&masterJWTPassthrough=true&includeExtendedEvents=true'
-    else:
-        parsed_url = urlparse(f"{stitcher}{base_path}")
-        base_query_params = parse_qs(parsed_url.query)
-        # Update base query parameters with the provided parameters
-        for key, value in params.items():
-            if key in base_query_params:
-                # Extend the existing values with new values if the parameter already exists
-                base_query_params[key].extend(value)
-            else:
-                # Add new parameter and its values
-                base_query_params[key] = value
-
-        # Construct updated query string
-        updated_query = urlencode(base_query_params, doseq=True)
-
-        # Generate the final URL
-        video_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path,
-                               parsed_url.params, updated_query, parsed_url.fragment))
-
-    print(video_url)
-    return (redirect(video_url))
+    video_url = f"https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv/stitch/hls/channel/{id}/master.m3u8?{urlencode(params)}"
+    return redirect(video_url)
 
 @app.get("/<provider>/epg/<country_code>/<filename>")
 def epg_xml(provider, country_code, filename):
+    if country_code not in ALLOWED_COUNTRY_CODES or not re.match(r'epg-[\w-]+\.xml(\.gz)?', filename):
+        return "Invalid request", 400
 
-    # Generate ALLOWED_FILENAMES and ALLOWED_GZ_FILENAMES based on ALLOWED_COUNTRY_CODES
-    ALLOWED_EPG_FILENAMES = {f'epg-{code}.xml' for code in ALLOWED_COUNTRY_CODES}
-    ALLOWED_GZ_FILENAMES = {f'epg-{code}.xml.gz' for code in ALLOWED_COUNTRY_CODES}
+    if not os.path.exists(filename):
+        return "EPG file not found. It may still be generating.", 404
 
-    # Specify the file path
-    # file_path = 'epg.xml'
-    try:
-        if country_code not in ALLOWED_COUNTRY_CODES:
-            return "Invalid county code", 400
+    mimetype = 'application/gzip' if filename.endswith('.gz') else 'application/xml'
+    return send_file(filename, as_attachment=filename.endswith('.gz'), mimetype=mimetype)
 
-        # Check if the provided filename is allowed in either format
-        if filename not in ALLOWED_EPG_FILENAMES and filename not in ALLOWED_GZ_FILENAMES:
-        # Check if the provided filename is allowed
-        # if filename not in ALLOWED_EPG_FILENAMES:
-            return "Invalid filename", 400
+def run_epg_scheduler():
+    print("[INFO] Running EPG Generation...")
+    
+    active_codes = set(c for c in pluto_country_list if c in ALLOWED_COUNTRY_CODES and c != 'all')
+    
+    for code in active_codes:
+        if error := providers[provider].update_epg(code):
+            print(f"Could not update EPG for {code}: {error}")
 
-        # Specify the file path based on the provider and filename
-        file_path = f'{filename}'
+    for code in active_codes:
+        if error := providers[provider].create_xml_file(code):
+            print(f"Could not create XML file for {code}: {error}")
 
-        # Return the file without explicitly opening it
-        if filename in ALLOWED_EPG_FILENAMES:
-            return send_file(file_path, as_attachment=False, download_name=file_path, mimetype='text/plain')
-        elif filename in ALLOWED_GZ_FILENAMES:
-            return send_file(file_path, as_attachment=True, download_name=file_path)
+    if 'all' in pluto_country_list:
+        print("Creating combined EPG file for all countries.")
+        if error := providers[provider].create_xml_file(list(active_codes)):
+            print(f"Could not create combined XML file: {error}")
+    
+    providers[provider].clear_epg_data()
+    print("[INFO] EPG Generation Complete.")
 
-    except FileNotFoundError:
-        # Handle the case where the file is not found
-        return "XML file not found", 404
-    except Exception as e:
-        # Handle other unexpected errors
-        return f"An error occurred: {str(e)}", 500
-
-
-    except Exception as e:
-        # Handle other unexpected errors
-        return f"An error occurred: {str(e)}", 500
-
-# Define the function you want to execute every four hours
-def epg_scheduler():
-    print("[INFO] Running EPG Scheduler")
-    if all(item in ALLOWED_COUNTRY_CODES for item in pluto_country_list):
-        for code in pluto_country_list:
-            error = providers[provider].create_xml_file(code)
-            if error: print(f"{error}")
-        error = providers[provider].create_xml_file(pluto_country_list)
-        if error: print(f"{error}")
-    print("[INFO] EPG Scheduler Complete")
-
-# Schedule the function to run every two hours
-schedule.every(2).hours.do(epg_scheduler)
-
-# Define a function to run the scheduler in a separate thread
-def scheduler_thread():
-    # Run the task immediately when the thread starts
-    try:
-        epg_scheduler()
-    except Exception as e:
-        print(f"Error running initial task: {e}")
-
-    # Continue as Scheduled
+def background_scheduler():
+    schedule.every(2).hours.do(run_epg_scheduler)
     while True:
-        try:
-            schedule.run_pending()
-            time.sleep(1)
-        except Exception as e:
-             print(f"[ERROR] Error in scheduler thread: {e}")
-
-# Function to monitor and restart the thread if needed
-def monitor_thread(thread_func):
-    thread = Thread(target=thread_func, daemon=True)
-    print("[INFO] Initializing Scheduler")
-    thread.start()
-
-    while True:
-        if not thread.is_alive():
-            print("[ERROR] Scheduler Thread Stopped. Restarting...")
-            thread.start()
-        time.sleep(15 * 60)  # Check every 15 minutes
-        print("[INFO] Checking Scheduler Thread")
+        schedule.run_pending()
+        time.sleep(60)
 
 if __name__ == '__main__':
-    try:
-        # Start a monitoring thread
-        Thread(target=monitor_thread, args=(scheduler_thread,), daemon=True).start()
+    run_epg_scheduler()
 
-        print(f"⇨ http server started on [::]:{port}")
-        WSGIServer(('', port), app, log=None).serve_forever()
-
-    except OSError as e:
-        print(str(e))
+    scheduler = Thread(target=background_scheduler, daemon=True)
+    scheduler.start()
+    
+    print(f"⇨ HTTP server started on [::]:{port}")
+    WSGIServer(('', port), app, log=None).serve_forever()
