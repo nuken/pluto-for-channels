@@ -43,8 +43,8 @@ services:
       # Your Pluto TV password. Use single quotes if it contains special characters.
       - PLUTO_PASSWORD='YOUR_PASSWORD'
       # Optional: Customize the country codes.
-      # Default: 'local,us_east,us_west,ca,uk,fr, 'de''
-      - PLUTO_CODE='local,us_east,us_west,ca,uk,fr, 'de''
+      # Default: 'local,us_east,us_west,ca,uk,fr,de'
+      - PLUTO_CODE='local,us_east,us_west,ca,uk,fr,de'
 ```
 
 ### **How to Use in Portainer**
