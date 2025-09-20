@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-**Test Version 1.21b** 
+**Version 1.21b** 
 
 
 # Running
