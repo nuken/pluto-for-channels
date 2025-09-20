@@ -64,7 +64,26 @@ def index():
     else:
         html_content += f"<p>Invalid country code found in environment variables.</p>"
 
-    html_content += '<script>function copyToClipboard(text){navigator.clipboard.writeText(text);}</script></div></section></body></html>'
+    # Updated JavaScript function for broader compatibility
+    html_content += '''
+    <script>
+    function copyToClipboard(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';  // Prevent scrolling to bottom of page in MS Edge.
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textarea);
+    }
+    </script>
+    '''
+    html_content += '</div></section></body></html>'
     return html_content
 
 @app.route("/verify")
