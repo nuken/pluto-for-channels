@@ -10,8 +10,8 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.21"
-updated_date = "Sept. 18, 2025"
+version = "1.21b"
+updated_date = "Sept. 20, 2025"
 
 # Retrieve the port number from env variables
 # Fallback to default if invalid or unspecified
@@ -28,9 +28,9 @@ pluto_country_list = os.environ.get("PLUTO_CODE")
 if pluto_country_list:
    pluto_country_list = pluto_country_list.split(',')
 else:
-   pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr']
+   pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de']
 
-ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'all']
+ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de', 'all']
 # instance of flask application
 app = Flask(__name__)
 provider = "pluto"
@@ -331,4 +331,5 @@ if __name__ == '__main__':
         WSGIServer(('', port), app, log=None).serve_forever()
 
     except OSError as e:
+
         print(str(e))
