@@ -1,9 +1,6 @@
 # Pluto for Channels
 
-**Test Version 1.21b (Subject to breaking)**
-
-**This version needs testers. I made a lot of changes that may or may not work under different setups. Your feedback is appreciated.**
-
+**Test Version 1.21b 
 
 
 # Running
