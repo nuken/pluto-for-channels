@@ -2,6 +2,12 @@
 
 **Version 1.21b** 
 
+# Changes
+
+ - Version 1.21b:
+    - Added Pluto Germany.
+ - Version 1.21: 
+    - Added support for PLUTO_USERNAME and PLUTO_PASSWORD environment variables.
 
 # Running
 Use single quotes around the username and password to avoid conflicts.
