@@ -1,10 +1,16 @@
 # Pluto for Channels
 
-**Test Version 1.21b (Subject to breaking)**
+**Test Version 1.22 (Subject to breaking)**
 
 **This version needs testers. I made a lot of changes that may or may not work under different setups. Your feedback is appreciated.**
 
-
+ # Changes
+ - Version 1.22:
+    - Added styling to Playlist page and a copy link.
+ - Version 1.21b:
+    - Added Pluto Germany.
+ - Version 1.21: 
+    - Added support for PLUTO_USERNAME and PLUTO_PASSWORD environment variables.
 
 # Running
 Use single quotes around the username and password to avoid conflicts.
@@ -21,7 +27,7 @@ docker run -d --restart unless-stopped -p [your_port_number_here]:7777 -e PLUTO_
 You can retrieve the playlist and EPG via the status page.
 
 ```
-[http://127.0.0.1](http://127.0.0.1):[your_port_number_here]
+http://127.0.0.1:[your_port_number_here]
 ```
 ### **docker-compose.yml**
 
