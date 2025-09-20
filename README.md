@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-Current version: **1.26**
+Current version: **1.21**
 
 # About
 
@@ -20,23 +20,8 @@ Site 2
 
 # Changes
 
- - Version 1.26:
-      - Updated Python version and build.
-      - Added token verify endpoint.   
- - Version 1.25:
-      - Now runs the entire process of creating the guide files once, immediately when it starts up. The background scheduler then takes over for all future updates.
-      - Added rotating User-Agent strings from a list of common browser agents to make the script appear more like a regular user and reduce the risk of being blocked by Pluto TV's servers.
-      - The application no longer holds the entire multi-megabyte EPG file in memory while building it. Instead, it processes the guide data and writes it directly to the .xml file piece by piece.
-      - Instead of requesting guide data from the Pluto TV server one chunk at a time, the script now requests up to 10 chunks simultaneously.
- - Version 1.24:
-      - Internal, not released.
- - Version 1.23:
-      - Internal, not released. 
- - Version 1.22:
-      - Internal, not released.
   - Version 1.21:
       - Added support for username and password authentication.
-      - Added Pluto Germany.
   - Version 1.20:
       - additional error handling and thread monitoring.
   - Version 1.18:
@@ -86,7 +71,7 @@ docker run -d --restart unless-stopped -p [your_port_number_here]:7777 -e PLUTO_
 You can retrieve the playlist and EPG via the status page.
 
 ```
-[http://127.0.0.1](http://127.0.0.1):[your_port_number_here]
+http://127.0.0.1:[your_port_number_here]
 ```
 
 ## Environement Variables
@@ -96,7 +81,7 @@ You can retrieve the playlist and EPG via the status page.
 | PLUTO\_PORT | Port the API will be served on. You can set this if it conflicts with another service in your environment. | 7777 |
 | PLUTO\_USERNAME | Your Pluto TV username. | |
 | PLUTO\_PASSWORD | Your Pluto TV password. | |
-| PLUTO\_CODE | What country streams will be hosted. <br>Multiple can be hosted using comma separation\<p\>\<p\>ALLOWED\_COUNTRY\_CODES:<br>**us\_east** - United States East Coast,<br>**us\_west** - United States West Coast,<br>**local** - Local IP address Geolocation,<br>**ca** - Canada,<br>**uk** - United Kingdom, <br>**fr** - France, <br>**de** - Germany, | local,us\_west,us\_east,ca,uk |
+| PLUTO\_CODE | What country streams will be hosted. <br>Multiple can be hosted using comma separation\<p\>\<p\>ALLOWED\_COUNTRY\_CODES:<br>**us\_east** - United States East Coast,<br>**us\_west** - United States West Coast,<br>**local** - Local IP address Geolocation,<br>**ca** - Canada,<br>**uk** - United Kingdom, <br>**fr** - France, | local,us\_west,us\_east,ca,uk |
 
 ## Additional URL Parameters
 
