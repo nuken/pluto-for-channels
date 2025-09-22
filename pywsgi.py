@@ -10,7 +10,7 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.21b"
+version = "1.22"
 updated_date = "Sept. 20, 2025"
 
 # Retrieve the port number from env variables
@@ -49,10 +49,64 @@ url = f'<!DOCTYPE html>\
             <title>{provider.capitalize()} Playlist</title>\
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">\
             <style>\
-              ul{{\
-                margin-bottom: 10px;\
+              body {{ \
+                background-color: #1a1a1a; \
+                color: #f5f5f5; \
+              }}\
+              .section {{ \
+                padding: 3rem 1.5rem; \
+              }}\
+              .title, .subtitle {{ \
+                color: #f5f5f5; \
+              }}\
+              .list-item {{ \
+                display: flex; \
+                align-items: center; \
+                justify-content: space-between; \
+                padding: 10px; \
+                border-bottom: 1px solid #363636; \
+              }}\
+              .list-item:last-child {{ \
+                border-bottom: none; \
+              }}\
+              a {{ \
+                color: #3273dc; \
+                word-break: break-all; \
+                margin-right: 15px; \
+              }}\
+              a:hover {{ \
+                color: #4e8ff1; \
+              }}\
+              .copy-button {{ \
+                background-color: #3273dc; \
+                color: white; \
+                border: none; \
+                padding: 5px 10px; \
+                border-radius: 4px; \
+                cursor: pointer; \
+                transition: background-color 0.3s; \
+                flex-shrink: 0; \
+              }}\
+              .copy-button:hover {{ \
+                background-color: #4e8ff1; \
               }}\
             </style>\
+            <script>\
+              function copyToClipboard(text) {{\
+                const textarea = document.createElement(\'textarea\');\
+                textarea.value = text;\
+                textarea.style.position = \'fixed\';\
+                textarea.style.left = \'-9999px\';\
+                document.body.appendChild(textarea);\
+                textarea.select();\
+                try {{\
+                  document.execCommand(\'copy\');\
+                }} catch (err) {{\
+                  console.error(\'Fallback: Oops, unable to copy\', err);\
+                }}\
+                document.body.removeChild(textarea);\
+              }}\
+            </script>\
           </head>\
           <body>\
           <section class="section">\
@@ -71,33 +125,33 @@ def index():
     ul = ""
     if all(item in ALLOWED_COUNTRY_CODES for item in pluto_country_list):
         pl = f"http://{host}/{provider}/all/playlist.m3u"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></li>\n"
+        ul += f"<div class='list-item'><span>{provider.upper()} ALL channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
         pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=id"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></li>\n"
+        ul += f"<div class='list-item'><span>{provider.upper()} ALL channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
         pl = f"http://{host}/{provider}/all/playlist.m3u?channel_id_format=slug_only"
-        ul += f"<li>{provider.upper()} ALL channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></li>\n"
+        ul += f"<div class='list-item'><span>{provider.upper()} ALL channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
         ul += f"<br>\n"
         pl = f"http://{host}/{provider}/epg/all/epg-all.xml"
-        ul += f"<li>{provider.upper()} ALL EPG: <a href='{pl}'>{pl}</a></li>\n"
+        ul += f"<div class='list-item'><span>{provider.upper()} ALL EPG: <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
         pl = f"http://{host}/{provider}/epg/all/epg-all.xml.gz"
-        ul += f"<li>{provider.upper()} ALL EPG GZ: <a href='{pl}'>{pl}</a></li>\n"
+        ul += f"<div class='list-item'><span>{provider.upper()} ALL EPG GZ: <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
         ul += f"<br>\n"
         for code in pluto_country_list:
             pl = f"http://{host}/{provider}/{code}/playlist.m3u"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></li>\n"
+            ul += f"<div class='list-item'><span>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{slug}}\" (default format): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
             pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=id"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></li>\n"
+            ul += f"<div class='list-item'><span>{provider.upper()} {code.upper()} channel_id_format = \"{provider}-{{id}}\" (i.mjh.nz compatibility): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
             pl = f"http://{host}/{provider}/{code}/playlist.m3u?channel_id_format=slug_only"
-            ul += f"<li>{provider.upper()} {code.upper()} channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></li>\n"
+            ul += f"<div class='list-item'><span>{provider.upper()} {code.upper()} channel_id_format = \"{{slug}}\" (maddox compatibility): <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
             ul += f"<br>\n"
             pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml"
-            ul += f"<li>{provider.upper()} {code.upper()} EPG: <a href='{pl}'>{pl}</a></li>\n"
+            ul += f"<div class='list-item'><span>{provider.upper()} {code.upper()} EPG: <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
             pl = f"http://{host}/{provider}/epg/{code}/epg-{code}.xml.gz"
-            ul += f"<li>{provider.upper()} {code.upper()} EPG GZ: <a href='{pl}'>{pl}</a></li>\n"
+            ul += f"<div class='list-item'><span>{provider.upper()} {code.upper()} EPG GZ: <a href='{pl}'>{pl}</a></span><button class='copy-button' onclick=\"copyToClipboard('{pl}')\">Copy</button></div>\n"
             ul += f"<br>\n"
     else:
         ul += f"<li>INVALID COUNTRY CODE in \"{', '.join(pluto_country_list).upper()}\"</li>\n"
-    return f"{url}<ul>{ul}</ul></div></section></body></html>"
+    return f"{url}<div class='list'>{ul}</div></div></section></body></html>"
 
 @app.route("/<country_code>/token")
 def token(country_code):

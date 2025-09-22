@@ -4,6 +4,8 @@
 
 # Changes
 
+ - Version 1.22:
+    - Added styling to Playlist page and a copy link.
  - Version 1.21b:
     - Added Pluto Germany.
  - Version 1.21: 
