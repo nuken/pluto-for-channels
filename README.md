@@ -1,6 +1,6 @@
 # Pluto for Channels
 
-**Version 1.21b** 
+**Version 1.22** 
 
 # Changes
 
