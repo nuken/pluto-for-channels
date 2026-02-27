@@ -245,10 +245,10 @@ class Client:
 
 
     def update_epg(self, country_code, range_count = 3):
-        def update_epg(self, country_code, range_count = 3):
         # Skip fetching if we already downloaded this country's EPG during this scheduler run
         if country_code in self.epg_data:
             return None
+
         resp, error = self.resp_data(country_code)
         if error: return None, error
 
