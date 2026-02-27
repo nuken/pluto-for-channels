@@ -23,6 +23,7 @@ http://[your_ip]:[your_port_number]
 
 
 ```yaml
+services:
   pluto-for-channels:
     image: rcvaughn2/pluto-for-channels:test
     container_name: pluto-for-channels
