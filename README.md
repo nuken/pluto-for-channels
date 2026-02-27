@@ -46,7 +46,6 @@ services:
       # Map your desired host port to the container's port 7777
       - "7777:7777"
     environment:
-      environment:
       # Account 1 (Required)
       - PLUTO_USERNAME='USER_1'
       - PLUTO_PASSWORD='PASSWORD_1'      
