@@ -59,6 +59,7 @@ http://127.0.0.1:[your_port_number_here]
       # Default: local,us_east,us_west,ca,uk,fr,de
       - PLUTO_CODE=local,us_east,us_west,ca,uk,fr,de
 ```
+Run `docker compose up -d` in terminal.
 
 ### **How to Use in Portainer**
 
