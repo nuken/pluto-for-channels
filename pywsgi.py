@@ -212,7 +212,7 @@ def playlist(provider, country_code):
 
     host = request.host
     channel_id_format = request.args.get('channel_id_format','').lower()
-    
+
     if err is not None:
         return err, 500
     stations = sorted(stations, key = lambda i: i.get('number', 0))
@@ -265,10 +265,10 @@ def watch(provider, country_code, id):
     # Fetch the token using the round-robin account index
     resp, error = providers[provider].resp_data(country_code, account_index)
     if error: return error, 500
-    
+
     token = resp.get('sessionToken', '')
     stitcherParams = resp.get("stitcherParams", '')
-    
+
     # Construct the authenticated URL for all streams
     video_url = f'{stitcher}/v2{base_path}?{stitcherParams}&jwt={token}&masterJWTPassthrough=true&includeExtendedEvents=true'
 
@@ -292,12 +292,12 @@ def epg_xml(provider, country_code, filename):
         # Check if the provided filename is allowed
         # if filename not in ALLOWED_EPG_FILENAMES:
             return "Invalid filename", 400
-        
+
         # Specify the file path based on the provider and filename
         file_path = f'{filename}'
 
         # Return the file without explicitly opening it
-        if filename in ALLOWED_EPG_FILENAMES: 
+        if filename in ALLOWED_EPG_FILENAMES:
             return send_file(file_path, as_attachment=False, download_name=file_path, mimetype='text/plain')
         elif filename in ALLOWED_GZ_FILENAMES:
             return send_file(file_path, as_attachment=True, download_name=file_path)
@@ -321,8 +321,14 @@ def epg_scheduler():
         for code in pluto_country_list:
             error = providers[provider].create_xml_file(code)
             if error: print(f"{error}")
+
+        # Create the combined 'all' file
         error = providers[provider].create_xml_file(pluto_country_list)
         if error: print(f"{error}")
+
+        # Clear the memory ONCE after everything is done
+        providers[provider].epg_data = {}
+
     print("[INFO] EPG Scheduler Complete")
 
 # Schedule the function to run every two hours
@@ -369,3 +375,4 @@ if __name__ == '__main__':
 
 
         print(str(e))
+

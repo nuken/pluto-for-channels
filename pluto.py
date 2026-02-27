@@ -36,7 +36,7 @@ class Client:
 
         desired_timezone = pytz.timezone('UTC')
         current_date = datetime.now(desired_timezone)
-        
+
         # Check cache using the specific cache_key
         if (self.response_list.get(cache_key) is not None) and (current_date - self.sessionAt.get(cache_key, datetime.now())) < timedelta(hours=4):
             return self.response_list[cache_key], None
@@ -100,7 +100,7 @@ class Client:
         print(f"New token for {country_code} (Account {idx + 1}) generated at {(self.sessionAt.get(cache_key)).strftime('%Y-%m-%d %H:%M.%S %z')}")
 
         return self.response_list.get(cache_key), None
-        
+
     def channels(self, country_code):
         if country_code == 'all':
             return(self.channels_all())
@@ -148,7 +148,7 @@ class Client:
             response = self.session.get(category_url, params=params, headers=headers)
         except Exception as e:
             return None, (f"Error Exception type: {type(e).__name__}")
-        
+
         if response.status_code != 200:
             return None, f"HTTP failure {response.status_code}: {response.text}"
 
@@ -222,7 +222,7 @@ class Client:
                     offset = 9000
                     if number < offset:
                         number += offset
-        
+
             while number in seen:
                 number += 1
             seen.add(number)
@@ -298,7 +298,7 @@ class Client:
                     response = self.session.get(url, params=epg_params, headers=epg_headers)
                 except Exception as e:
                     return None, (f"Error Exception type: {type(e).__name__}")
-                
+
                 if response.status_code != 200:
                     return None, f"HTTP failure {response.status_code}: {response.text}"
                 country_data.append(response.json())
@@ -502,7 +502,7 @@ class Client:
                 epg_data_dict = {'data': data_list}
                 all_epg_data.append(epg_data_dict)
 
-            
+
         # print(f"[INFO] Length {len(all_epg_data)}")
         return(all_epg_data)
 
@@ -568,8 +568,5 @@ class Client:
         with open(xml_file_path, 'rb') as file:
             with gzip.open(compressed_file_path, 'wb') as compressed_file:
                 compressed_file.writelines(file)
-
-        # Clear the EPG data after writing full XML File
-        self.epg_data = {}
 
         return None
