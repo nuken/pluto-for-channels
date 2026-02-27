@@ -1,10 +1,12 @@
 # Pluto for Channels
 
-**Test Version 1.22 (Subject to breaking)**
+**Test Version 1.23 (Subject to breaking)**
 
 **This version needs testers. I made a lot of changes that may or may not work under different setups. Your feedback is appreciated.**
 
  # Changes
+ - Version 1.23:
+    - Added 4 username and password fields and round-robin load balancing
  - Version 1.22:
     - Added styling to Playlist page and a copy link.
  - Version 1.21b:
@@ -44,10 +46,19 @@ services:
       # Map your desired host port to the container's port 7777
       - "7777:7777"
     environment:
-      # Your Pluto TV username. Use single quotes if it contains special characters.
-      - PLUTO_USERNAME='YOUR_USERNAME'
-      # Your Pluto TV password. Use single quotes if it contains special characters.
-      - PLUTO_PASSWORD='YOUR_PASSWORD'
+      environment:
+      # Account 1 (Required)
+      - PLUTO_USERNAME='USER_1'
+      - PLUTO_PASSWORD='PASSWORD_1'      
+      # Account 2 (Optional)
+      - PLUTO_USERNAME2='USER_2'
+      - PLUTO_PASSWORD2='PASSWORD_2'      
+      # Account 3 (Optional)
+      - PLUTO_USERNAME3='USER_3'
+      - PLUTO_PASSWORD3='PASSWORD_3'      
+      # Account 4 (Optional)
+      - PLUTO_USERNAME4='USER_4'
+      - PLUTO_PASSWORD4='PASSWORD_4'
       # Optional: Customize the country codes.
       # Default: 'local,us_east,us_west,ca,uk,fr,de'
       - PLUTO_CODE='local,us_east,us_west,ca,uk,fr,de'
@@ -70,8 +81,14 @@ Portainer will now pull the image and create the container with all your specifi
 | Environment Variable | Description | Default |
 |---|---|---|
 | PLUTO\_PORT | Port the API will be served on. You can set this if it conflicts with another service in your environment. | 7777 |
-| PLUTO\_USERNAME | Your Pluto TV username. | |
-| PLUTO\_PASSWORD | Your Pluto TV password. | |
+| PLUTO\_USERNAME | Your Pluto TV username. (Required) | |
+| PLUTO\_PASSWORD | Your Pluto TV password. (Required) | |
+| PLUTO\_USERNAME2 | Your Pluto TV username. (Optional) | |
+| PLUTO\_PASSWORD2 | Your Pluto TV password. (Optional) | |
+| PLUTO\_USERNAME3 | Your Pluto TV username. (Optional) | |
+| PLUTO\_PASSWORD3 | Your Pluto TV password. (Optional) | |
+| PLUTO\_USERNAME4 | Your Pluto TV username. (Optional) | |
+| PLUTO\_PASSWORD4 | Your Pluto TV password. (Optional) | |
 | PLUTO\_CODE | What country streams will be hosted. <br>Multiple can be hosted using comma separation\<p\>\<p\>ALLOWED\_COUNTRY\_CODES:<br>**us\_east** - United States East Coast,<br>**us\_west** - United States West Coast,<br>**local** - Local IP address Geolocation,<br>**ca** - Canada,<br>**uk** - United Kingdom, <br>**fr** - France, <br> **de** - Germany | local,us\_west,us\_east,ca,uk |
 
 ## Additional URL Parameters
