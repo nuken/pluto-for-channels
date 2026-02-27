@@ -31,6 +31,7 @@ http://[your_ip]:[your_port_number]
       # Map your desired host port to the container's port 7777
       - "7777:7777"
     environment:
+      # Remove Username/Password pairs not used
       # Account 1 (Required)
       PLUTO_USERNAME: USER_1
       PLUTO_PASSWORD: PASSWORD_1      
