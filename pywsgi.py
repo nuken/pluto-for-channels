@@ -10,8 +10,8 @@ from gevent import monkey
 monkey.patch_all()
 
 
-version = "1.22"
-updated_date = "Sept. 20, 2025"
+version = "1.23"
+updated_date = "Feb. 26, 2026"
 
 # Retrieve the port number from env variables
 # Fallback to default if invalid or unspecified
@@ -21,8 +21,20 @@ except:
     port = 7777
 
 # Get Username and Password from environment variables
-pluto_username = os.environ.get("PLUTO_USERNAME")
-pluto_password = os.environ.get("PLUTO_PASSWORD")
+# pluto_username = os.environ.get("PLUTO_USERNAME")
+# pluto_password = os.environ.get("PLUTO_PASSWORD")
+
+# Get up to 4 Usernames and Passwords from environment variables
+pluto_accounts = []
+for suffix in ['', '2', '3', '4']:
+    u = os.environ.get(f"PLUTO_USERNAME{suffix}")
+    p = os.environ.get(f"PLUTO_PASSWORD{suffix}")
+    if u and p:
+        pluto_accounts.append((u, p))
+
+# Fallback if no credentials are provided
+if not pluto_accounts:
+    pluto_accounts.append((None, None))
 
 pluto_country_list = os.environ.get("PLUTO_CODE")
 if pluto_country_list:
@@ -31,13 +43,16 @@ else:
    pluto_country_list = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de']
 
 ALLOWED_COUNTRY_CODES = ['local', 'us_east', 'us_west', 'ca', 'uk', 'fr', 'de', 'all']
+
+# Initialize the global stream counter
+stream_counter = 0
+
 # instance of flask application
 app = Flask(__name__)
 provider = "pluto"
 providers = {
-    provider: importlib.import_module(provider).Client(pluto_username, pluto_password),
+    provider: importlib.import_module(provider).Client(pluto_accounts),
 }
-
 def remove_non_printable(s):
     return ''.join([char for char in s if not unicodedata.category(char).startswith('C')])
 
@@ -238,61 +253,27 @@ def playlist_maddox_compatible(provider, country_code):
 
 @app.route("/<provider>/<country_code>/watch/<id>")
 def watch(provider, country_code, id):
+    global stream_counter
+    stream_counter += 1
+    account_index = stream_counter
+
     client_id = providers[provider].load_device()
     sid = uuid.uuid4()
     stitcher = "https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv"
     base_path = f"/stitch/hls/channel/{id}/master.m3u8"
 
-    jwt_required_list = ['625f054c5dfea70007244612', '625f04253e5f6c000708f3b7', '5421f71da6af422839419cb3']
+    # Fetch the token using the round-robin account index
+    resp, error = providers[provider].resp_data(country_code, account_index)
+    if error: return error, 500
     
-    params = {'advertisingId': '',
-              'appName': 'web',
-              'appVersion': 'unknown',
-              'appStoreUrl': '',
-              'architecture': '',
-              'buildVersion': '',
-              'clientTime': '0',
-              'deviceDNT': '0',
-              'deviceId': client_id,
-              'deviceMake': 'Chrome',
-              'deviceModel': 'web',
-              'deviceType': 'web',
-              'deviceVersion': 'unknown',
-              'includeExtendedEvents': 'false',
-              'sid': sid,
-              'userId': '',
-              'serverSideAds': 'true'
-    }
+    token = resp.get('sessionToken', '')
+    stitcherParams = resp.get("stitcherParams", '')
+    
+    # Construct the authenticated URL for all streams
+    video_url = f'{stitcher}/v2{base_path}?{stitcherParams}&jwt={token}&masterJWTPassthrough=true&includeExtendedEvents=true'
 
-    if id in jwt_required_list:
-        resp, error= providers[provider].resp_data(country_code)
-        if error: return error, 500
-        # print(json.dumps(resp, indent=2))
-        token = resp.get('sessionToken','')
-        stitcherParams = resp.get("stitcherParams",'')
-        video_url = f'{stitcher}/v2{base_path}?{stitcherParams}&jwt={token}&masterJWTPassthrough=true&includeExtendedEvents=true'
-    else:
-        parsed_url = urlparse(f"{stitcher}{base_path}")
-        base_query_params = parse_qs(parsed_url.query)
-        # Update base query parameters with the provided parameters
-        for key, value in params.items():
-            if key in base_query_params:
-                # Extend the existing values with new values if the parameter already exists
-                base_query_params[key].extend(value)
-            else:
-                # Add new parameter and its values
-                base_query_params[key] = value
-
-        # Construct updated query string
-        updated_query = urlencode(base_query_params, doseq=True)
-
-        # Generate the final URL
-        video_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path,
-                               parsed_url.params, updated_query, parsed_url.fragment))
-
-    print(video_url)
-    return (redirect(video_url))
-
+    print(f"[WATCH] Stream requested for channel: {id} using load-balance account #{account_index % len(providers[provider].accounts) + 1}")
+    return redirect(video_url)
 @app.get("/<provider>/epg/<country_code>/<filename>")
 def epg_xml(provider, country_code, filename):
 
@@ -385,5 +366,6 @@ if __name__ == '__main__':
         WSGIServer(('', port), app, log=None).serve_forever()
 
     except OSError as e:
+
 
         print(str(e))

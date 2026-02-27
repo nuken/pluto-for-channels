@@ -3,15 +3,14 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 
 class Client:
-    def __init__(self, username=None, password=None):
+    def __init__(self, accounts=None):
         self.session = requests.Session()
         self.sessionAt = {}
         self.response_list = {}
         self.epg_data = {}
         self.device = None
         self.all_channels = {}
-        self.username = username
-        self.password = password
+        self.accounts = accounts if accounts else [(None, None)]
 
         self.load_device()
         self.x_forward = {"local": {"X-Forwarded-For":""},
@@ -27,11 +26,20 @@ class Client:
             self.device = uuid.uuid1()
         return(self.device)
 
-    def resp_data(self, country_code):
+    def resp_data(self, country_code, account_index=0):
+        # Determine which account to use
+        idx = account_index % len(self.accounts)
+        username, password = self.accounts[idx]
+
+        # Create a unique cache key per country AND account
+        cache_key = f"{country_code}_{idx}"
+
         desired_timezone = pytz.timezone('UTC')
         current_date = datetime.now(desired_timezone)
-        if (self.response_list.get(country_code) is not None) and (current_date - self.sessionAt.get(country_code, datetime.now())) < timedelta(hours=4):
-            return self.response_list[country_code], None
+        
+        # Check cache using the specific cache_key
+        if (self.response_list.get(cache_key) is not None) and (current_date - self.sessionAt.get(cache_key, datetime.now())) < timedelta(hours=4):
+            return self.response_list[cache_key], None
 
         boot_headers = {
             'authority': 'boot.pluto.tv',
@@ -65,9 +73,9 @@ class Client:
             'lastAppLaunchDate': '',
             }
 
-        if self.username and self.password:
-            boot_params['username'] = self.username
-            boot_params['password'] = self.password
+        if username and password:
+            boot_params['username'] = username
+            boot_params['password'] = password
 
         if country_code in self.x_forward.keys():
             boot_headers.update(self.x_forward.get(country_code))
@@ -83,13 +91,13 @@ class Client:
             print(f"HTTP failure {response.status_code}: {response.text}")
             return None, f"HTTP failure {response.status_code}: {response.text}"
 
-        # Save entire Response:
-        self.response_list.update({country_code: resp})
-        self.sessionAt.update({country_code: current_date})
-        print(f"New token for {country_code} generated at {(self.sessionAt.get(country_code)).strftime('%Y-%m-%d %H:%M.%S %z')}")
+        # Save entire Response to the specific cache key
+        self.response_list.update({cache_key: resp})
+        self.sessionAt.update({cache_key: current_date})
+        print(f"New token for {country_code} (Account {idx + 1}) generated at {(self.sessionAt.get(cache_key)).strftime('%Y-%m-%d %H:%M.%S %z')}")
 
-        return self.response_list.get(country_code), None
-
+        return self.response_list.get(cache_key), None
+        
     def channels(self, country_code):
         if country_code == 'all':
             return(self.channels_all())
