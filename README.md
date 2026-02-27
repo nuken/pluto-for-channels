@@ -35,9 +35,6 @@ http://127.0.0.1:[your_port_number_here]
 
 
 ```yaml
-version: '3.8'
-
-services:
   pluto-for-channels:
     image: rcvaughn2/pluto-for-channels:test
     container_name: pluto-for-channels
@@ -47,20 +44,20 @@ services:
       - "7777:7777"
     environment:
       # Account 1 (Required)
-      - PLUTO_USERNAME='USER_1'
-      - PLUTO_PASSWORD='PASSWORD_1'      
+      - PLUTO_USERNAME=USER_1
+      - PLUTO_PASSWORD=PASSWORD_1      
       # Account 2 (Optional)
-      - PLUTO_USERNAME2='USER_2'
-      - PLUTO_PASSWORD2='PASSWORD_2'      
+      - PLUTO_USERNAME2=USER_2
+      - PLUTO_PASSWORD2=PASSWORD_2      
       # Account 3 (Optional)
-      - PLUTO_USERNAME3='USER_3'
-      - PLUTO_PASSWORD3='PASSWORD_3'      
+      - PLUTO_USERNAME3=USER_3
+      - PLUTO_PASSWORD3=PASSWORD_3      
       # Account 4 (Optional)
-      - PLUTO_USERNAME4='USER_4'
-      - PLUTO_PASSWORD4='PASSWORD_4'
+      - PLUTO_USERNAME4=USER_4
+      - PLUTO_PASSWORD4=PASSWORD_4
       # Optional: Customize the country codes.
-      # Default: 'local,us_east,us_west,ca,uk,fr,de'
-      - PLUTO_CODE='local,us_east,us_west,ca,uk,fr,de'
+      # Default: local,us_east,us_west,ca,uk,fr,de
+      - PLUTO_CODE=local,us_east,us_west,ca,uk,fr,de
 ```
 
 ### **How to Use in Portainer**
