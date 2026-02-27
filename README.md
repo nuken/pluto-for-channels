@@ -14,22 +14,10 @@
  - Version 1.21: 
     - Added support for PLUTO_USERNAME and PLUTO_PASSWORD environment variables.
 
-# Running
-Use single quotes around the username and password to avoid conflicts.
-```
-docker run -d --restart unless-stopped --network=host -e PLUTO_PORT=[your_port_number_here] -e PLUTO_USERNAME='your_username' -e PLUTO_PASSWORD='your_password' --name pluto-for-channels rcvaughn2/pluto-for-channels:test
-```
-
-or
-
-```
-docker run -d --restart unless-stopped -p [your_port_number_here]:7777 -e PLUTO_USERNAME'[your_username' -e PLUTO_PASSWORD='your_password' --name  pluto-for-channels rcvaughn2/pluto-for-channels:test
-```
-
 You can retrieve the playlist and EPG via the status page.
 
 ```
-http://127.0.0.1:[your_port_number_here]
+http://[your_ip]:[your_port_number]
 ```
 ### **docker-compose.yml**
 
