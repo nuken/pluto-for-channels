@@ -47,23 +47,26 @@ class Client:
             'accept-language': 'en-US,en;q=0.9',
             'origin': 'https://pluto.tv',
             'referer': 'https://pluto.tv/',
-            'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            # --- UPDATED CHROME VERSIONS ---
+            'sec-ch-ua': '"Chromium";v="145", "Not(A:Brand";v="24", "Google Chrome";v="145"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Linux"',
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
             'sec-fetch-site': 'same-site',
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
             }
 
         boot_params = {
             'appName': 'web',
-            'appVersion': '8.0.0-111b2b9dc00bd0bea9030b30662159ed9e7c8bc6',
-            'deviceVersion': '122.0.0',
+            # --- UPDATED API STRINGS ---
+            'appVersion': '9.19.0-7a6c115631d945c4f7327de3e03b7c474b692657',
+            'deviceVersion': '145.0.0',
             'deviceModel': 'web',
             'deviceMake': 'chrome',
             'deviceType': 'web',
-            'clientID': 'c63f9fbf-47f5-40dc-941c-5628558aec87',
+            'clientID': 'f4ffe3cb-2de0-4bb3-9777-747b1124ddd3',
+            # ---------------------------
             'clientModelNumber': '1.0.0',
             'serverSideAds': 'false',
             'drmCapabilities': 'widevine:L3',
@@ -568,4 +571,5 @@ class Client:
 
         # Clear the EPG data after writing full XML File
         self.epg_data = {}
+
         return None
