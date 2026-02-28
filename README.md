@@ -1,3 +1,6 @@
+# Use this version https://github.com/kineticman/pluto-for-channels
+
+
 # Pluto for Channels
 
 **Version 1.22** 
